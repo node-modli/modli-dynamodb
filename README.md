@@ -1,4 +1,7 @@
 [![wercker status](https://app.wercker.com/status/76a8e0a57f5bbb26274c21e097eda3d1/s/master "wercker status")](https://app.wercker.com/project/bykey/76a8e0a57f5bbb26274c21e097eda3d1)
+[![Code Climate](https://codeclimate.com/github/node-modli/modli-dynamodb/badges/gpa.svg)](https://codeclimate.com/github/node-modli/modli-dynamodb)
+[![Test Coverage](https://codeclimate.com/github/node-modli/modli-dynamodb/badges/coverage.svg)](https://codeclimate.com/github/node-modli/modli-dynamodb/coverage)
+
 # Modli - DynamoDB Adapter
 
 This module provides adapter for the [DynamoDB](https://aws.amazon.com/dynamodb)
