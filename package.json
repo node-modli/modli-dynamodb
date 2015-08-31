@@ -1,0 +1,54 @@
+{
+  "name": "modli-dynamodb",
+  "version": "0.0.0",
+  "description": "Modli adapter for AWS DynamoDB",
+  "main": "build/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/node-modli/modli-dynamodb"
+  },
+  "keywords": [
+    "model",
+    "data",
+    "database",
+    "modli",
+    "dynamodb",
+    "dynamo",
+    "aws"
+  ],
+  "author": "TechnologyAdvice <devteam@technologyadvice.com>",
+  "scripts": {
+    "all": "make",
+    "start": "make start",
+    "clean": "make clean",
+    "build": "make build",
+    "test": "make test",
+    "test-cover": "make test-cover",
+    "lint": "make lint"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "assert": "^1.3.0",
+    "babel": "^5.6.14",
+    "babel-eslint": "^4.0.5",
+    "babel-istanbul": "^0.3.17",
+    "body-parser": "^1.13.3",
+    "chai": "^3.0.0",
+    "eslint": "^1.2.1",
+    "express": "^4.13.3",
+    "istanbul-harmony": "^0.3.16",
+    "mocha": "^2.2.5",
+    "pre-commit": "^1.1.1",
+    "should": "^7.0.2"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1.46",
+    "bluebird": "^2.9.34",
+    "dynamodb": "^0.3.6",
+    "dynamodb-doc": "^1.0.0"
+  },
+  "pre-commit": [
+    "lint",
+    "test"
+  ]
+}
