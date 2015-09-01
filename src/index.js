@@ -51,7 +51,9 @@ dynamo.deleteTable = (params) => {
 dynamo.createTable = (params) => {
   return new Promise((resolve, reject) => {
     ddb.createTable(params, (err, res) => {
+      console.log('Params:', params);
       if (err) {
+        console.log('Got reject:', err);
         reject(err);
       } else {
         resolve(res);
@@ -110,6 +112,7 @@ dynamo.generateKey = (params) => {
  */
 dynamo.createTableFromModel = () => {
   let newTable = _.clone(tables.table, true);
+  console.log('Creaqting from ', dynamo.schemas);
   newTable.Table.TableName = dynamo.schemas['1'].tableName;
   _.each(dynamo.schemas['1'].indexes, (row) => {
     newTable.Table.AttributeDefinitions.push(dynamo.generateDefinition(row));
