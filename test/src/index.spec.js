@@ -1,10 +1,8 @@
 /* eslint no-unused-expressions: 0 */
 /* global expect, request, describe, it, before, after */
 import '../setup';
-import { dynamo } from '../../src/index.js';
+import DynamoAdapter from '../../src/index.js';
 import { testAccount1, testAccount2, testModel, testNumericModel, numericAccount} from './test-data';
-const _ = require('lodash');
-
 
 let dynamoConfig = {
   region: 'us-east-1',
@@ -13,17 +11,14 @@ let dynamoConfig = {
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '123456789'
 };
 
-dynamo.config(dynamoConfig);
-dynamo.schemas = {};
+const standard = new DynamoAdapter(dynamoConfig);
+const numeric = new DynamoAdapter(dynamoConfig);
 
+numeric.setSchema('1', testNumericModel);
+standard.setSchema('1', testModel);
 
 describe('dynamo numeric tests', () => {
-  let numeric = Object.create({});
-  numeric = _.extend({}, dynamo);
-  numeric.schemas['1'] = testNumericModel;
-
   describe('table', () => {
-    console.log('I have numeric', numeric.schemas);
     it('creates the numeric test table', (done) => {
       numeric.createTableFromModel().then((data) => {
         expect(data).to.be.an.object;
@@ -31,7 +26,7 @@ describe('dynamo numeric tests', () => {
       });
     });
   });
-  
+
   describe('create', () => {
     it('Creates first entry', (done) => {
       numeric.create(numericAccount.Item).then((data) => {
@@ -67,12 +62,7 @@ describe('dynamo numeric tests', () => {
   });
 });
 
-
 describe('standard model', () => {
-  // Set standard model
-  let standard = _.extend({}, dynamo);
-  standard.schemas['1'] = testModel;
-  
   describe('table', () => {
     it('creates the users table', (done) => {
       standard.createTableFromModel().then((data) => {
@@ -176,6 +166,17 @@ describe('standard model', () => {
         expect(data).to.be.an.object;
         done();
       });
+    });
+  });
+
+  describe('extend', () => {
+    it('extends the adapter with a new method', () => {
+      // Extend
+      standard.extend('sayFoo', () => {
+        return 'foo';
+      });
+      // Execute
+      expect(standard.sayFoo()).to.equal('foo');
     });
   });
 });
