@@ -113,6 +113,9 @@ export default class {
         return ({ error: 'Model has invalid index'});
       }
     });
+    if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
+      delete (newTable.Table.GlobalSecondaryIndexes);
+    }
     return this.createTable(newTable.Table);
   }
 
