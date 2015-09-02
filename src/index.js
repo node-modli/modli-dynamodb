@@ -5,7 +5,7 @@ let AWS = require('aws-sdk');
 let DOC = require('dynamodb-doc');
 
 /**
- * @namespace dynamo
+ * Default class for the DynamoAdapter
  */
 export default class {
   constructor(config) {
@@ -14,14 +14,29 @@ export default class {
     this.ddb = new DOC.DynamoDB();
   }
 
+  /*
+   * Sets the schema the model
+   * Makes deterministic calls and validation possible
+   *
+   */
   setSchema(version, schema) {
     this.schemas[version] = schema;
   }
 
+  /*
+   * Helper Method
+   * Returns the active schema
+   *
+   */
   getSchema() {
     return this.schemas;
   }
 
+  /*
+   * Helper Method
+   * Generates a secondary index for a new table
+   *
+   */
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
     try {
@@ -35,6 +50,11 @@ export default class {
     return newIndex;
   }
 
+  /*
+   * Helper Method
+   * Generates a definition for a create call
+   *
+   */
   generateDefinition(params) {
     let newDefinition = _.clone(tables.attribute, true);
     newDefinition.AttributeName = params.value;
@@ -42,7 +62,11 @@ export default class {
     return newDefinition;
   }
 
-  // TODO: Test with ranges
+  /*
+   * Helper Method
+   * Generates a key for a create call
+   *
+   */
   generateKey(params) {
     let newAtrribute = _.clone(tables.keyData, true);
     newAtrribute.AttributeName = params.value;
@@ -56,9 +80,7 @@ export default class {
    * @param {Object} body Contents to create entry
    * @returns {Object} promise
    */
-  // TODO: Double check validation
   create(body) {
-      // Return promise
     return new Promise((resolve, reject) => {
       try {
         const createParams = {
@@ -67,9 +89,7 @@ export default class {
           Item: body
         };
         const validationErrors = false;
-        // TODO: Fix validation
-        // const validationErrors = dynamo.validate(body);
-        /* istanbul ignore if */
+
         if (validationErrors) {
           reject(validationErrors);
         } else {
@@ -87,7 +107,13 @@ export default class {
     });
   }
 
-
+  /**
+   * Passthrough method
+   * @memberof dynamo
+   * Calls create table using explcit table creation parameters
+   * @params {Object} body Contents to create table
+   * @returns {Object} promise
+   */
   createTable(params) {
     return new Promise((resolve, reject) => {
       this.ddb.createTable(params, (err, res) => {
@@ -100,6 +126,11 @@ export default class {
     });
   }
 
+  /**
+   * Deterministic method to call create table using the model as the reference
+   * @memberof dynamo
+   * @returns {Object} promise
+   */
   createTableFromModel() {
     let newTable = _.clone(tables.table, true);
     newTable.Table.TableName = this.schemas['1'].tableName;
@@ -120,8 +151,11 @@ export default class {
   }
 
   /**
-    * Deletes a table explicitly
-    */
+   * Deterministic method to call create table using the model as the reference
+   * @memberof dynamo
+   * @params {HASHNAME: VALUE}
+   * @returns {Object} promise - {}
+   */
   deleteTable(params) {
     return new Promise((resolve, reject) => {
       this.ddb.deleteTable(params, (err, res) => {
@@ -136,8 +170,10 @@ export default class {
 
 
   /**
-    * Performs a full scan
-    */
+   * Performs a full unfiltered scan
+   * @memberof dynamo
+   * @returns {Object} promise - array of items
+   */
   scan() {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
@@ -155,8 +191,10 @@ export default class {
   }
 
   /**
-    * Gets a list of the tables
-    */
+   * Gets a list of available tables
+   * @memberof dynamo
+   * @returns {Object} promise - Array of tables
+   */
   list() {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, res) => {
@@ -170,8 +208,12 @@ export default class {
   }
 
   /**
-    * Performs a deterministic read
-    */
+   * Deterministic method to read a value from an object.
+   * Will use the model as a reference to construct the proper query
+   * @memberof dynamo
+   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @returns {Object} promise
+   */
   read(obj) {
     const key = Object.keys(obj)[0];
     let itemPromise = null;
@@ -199,7 +241,7 @@ export default class {
   /**
    * Reads from the database by secondary index
    * @memberof dynamo
-   * @param {Object} query Specific id or query to construct read
+   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
    * @returns {Object} promise
    */
   getItemById(obj) {
@@ -232,6 +274,9 @@ export default class {
     * Returns a list of objects in an array
     * Searched by the hashObject
     * Example: getItemsInArray('id',[1,2,3,4])
+    * @memberof dynamo
+    * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+    * @returns {Object} promise
     */
   getItemsInArray(hash, array) {
     return new Promise((resolve, reject) => {
@@ -385,9 +430,12 @@ export default class {
     });
   }
 
-  /*
-   * Extends a method by name and call back
-   */
+  /**
+  * Extends the dynamo object
+  * @memberof dynamo
+  * @param {String} name The name of the method
+  * @param {Function} fn The function to extend on the object
+  */
   extend(name, fn) {
     this[name] = fn.bind(this);
   }

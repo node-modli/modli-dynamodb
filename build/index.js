@@ -17,7 +17,7 @@ var AWS = require('aws-sdk');
 var DOC = require('dynamodb-doc');
 
 /**
- * @namespace dynamo
+ * Default class for the DynamoAdapter
  */
 
 var _default = (function () {
@@ -29,16 +29,34 @@ var _default = (function () {
     this.ddb = new DOC.DynamoDB();
   }
 
+  /*
+   * Sets the schema the model
+   * Makes deterministic calls and validation possible
+   *
+   */
+
   _createClass(_default, [{
     key: 'setSchema',
     value: function setSchema(version, schema) {
       this.schemas[version] = schema;
     }
+
+    /*
+     * Helper Method
+     * Returns the active schema
+     *
+     */
   }, {
     key: 'getSchema',
     value: function getSchema() {
       return this.schemas;
     }
+
+    /*
+     * Helper Method
+     * Generates a secondary index for a new table
+     *
+     */
   }, {
     key: 'generateSecondaryIndex',
     value: function generateSecondaryIndex(params) {
@@ -53,6 +71,12 @@ var _default = (function () {
       }
       return newIndex;
     }
+
+    /*
+     * Helper Method
+     * Generates a definition for a create call
+     *
+     */
   }, {
     key: 'generateDefinition',
     value: function generateDefinition(params) {
@@ -62,7 +86,11 @@ var _default = (function () {
       return newDefinition;
     }
 
-    // TODO: Test with ranges
+    /*
+     * Helper Method
+     * Generates a key for a create call
+     *
+     */
   }, {
     key: 'generateKey',
     value: function generateKey(params) {
@@ -78,13 +106,11 @@ var _default = (function () {
      * @param {Object} body Contents to create entry
      * @returns {Object} promise
      */
-    // TODO: Double check validation
   }, {
     key: 'create',
     value: function create(body) {
       var _this = this;
 
-      // Return promise
       return new Promise(function (resolve, reject) {
         try {
           var createParams = {
@@ -93,9 +119,7 @@ var _default = (function () {
             Item: body
           };
           var validationErrors = false;
-          // TODO: Fix validation
-          // const validationErrors = dynamo.validate(body);
-          /* istanbul ignore if */
+
           if (validationErrors) {
             reject(validationErrors);
           } else {
@@ -112,6 +136,14 @@ var _default = (function () {
         }
       });
     }
+
+    /**
+     * Passthrough method
+     * @memberof dynamo
+     * Calls create table using explcit table creation parameters
+     * @params {Object} body Contents to create table
+     * @returns {Object} promise
+     */
   }, {
     key: 'createTable',
     value: function createTable(params) {
@@ -127,6 +159,12 @@ var _default = (function () {
         });
       });
     }
+
+    /**
+     * Deterministic method to call create table using the model as the reference
+     * @memberof dynamo
+     * @returns {Object} promise
+     */
   }, {
     key: 'createTableFromModel',
     value: function createTableFromModel() {
@@ -151,8 +189,11 @@ var _default = (function () {
     }
 
     /**
-      * Deletes a table explicitly
-      */
+     * Deterministic method to call create table using the model as the reference
+     * @memberof dynamo
+     * @params {HASHNAME: VALUE}
+     * @returns {Object} promise - {}
+     */
   }, {
     key: 'deleteTable',
     value: function deleteTable(params) {
@@ -170,8 +211,10 @@ var _default = (function () {
     }
 
     /**
-      * Performs a full scan
-      */
+     * Performs a full unfiltered scan
+     * @memberof dynamo
+     * @returns {Object} promise - array of items
+     */
   }, {
     key: 'scan',
     value: function scan() {
@@ -193,8 +236,10 @@ var _default = (function () {
     }
 
     /**
-      * Gets a list of the tables
-      */
+     * Gets a list of available tables
+     * @memberof dynamo
+     * @returns {Object} promise - Array of tables
+     */
   }, {
     key: 'list',
     value: function list() {
@@ -212,8 +257,12 @@ var _default = (function () {
     }
 
     /**
-      * Performs a deterministic read
-      */
+     * Deterministic method to read a value from an object.
+     * Will use the model as a reference to construct the proper query
+     * @memberof dynamo
+     * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+     * @returns {Object} promise
+     */
   }, {
     key: 'read',
     value: function read(obj) {
@@ -243,7 +292,7 @@ var _default = (function () {
     /**
      * Reads from the database by secondary index
      * @memberof dynamo
-     * @param {Object} query Specific id or query to construct read
+     * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
      * @returns {Object} promise
      */
   }, {
@@ -280,6 +329,9 @@ var _default = (function () {
       * Returns a list of objects in an array
       * Searched by the hashObject
       * Example: getItemsInArray('id',[1,2,3,4])
+      * @memberof dynamo
+      * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+      * @returns {Object} promise
       */
   }, {
     key: 'getItemsInArray',
@@ -448,9 +500,12 @@ var _default = (function () {
       });
     }
 
-    /*
-     * Extends a method by name and call back
-     */
+    /**
+    * Extends the dynamo object
+    * @memberof dynamo
+    * @param {String} name The name of the method
+    * @param {Function} fn The function to extend on the object
+    */
   }, {
     key: 'extend',
     value: function extend(name, fn) {
