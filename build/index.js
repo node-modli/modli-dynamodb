@@ -61,14 +61,9 @@ var _default = (function () {
     key: 'generateSecondaryIndex',
     value: function generateSecondaryIndex(params) {
       var newIndex = Object.create({});
-      try {
-        newIndex = _.clone(_dynamoData.tables.secondaryIndex, true);
-        newIndex.IndexName = params.value + '-index';
-        newIndex.KeySchema.push(this.generateKey(params));
-        return newIndex;
-      } catch (err) {
-        return err;
-      }
+      newIndex = _.clone(_dynamoData.tables.secondaryIndex, true);
+      newIndex.IndexName = params.value + '-index';
+      newIndex.KeySchema.push(this.generateKey(params));
       return newIndex;
     }
 
@@ -108,7 +103,7 @@ var _default = (function () {
      */
   }, {
     key: 'create',
-    value: function create(body) {
+    value: function create(body, version) {
       var _this = this;
 
       return new Promise(function (resolve, reject) {
@@ -118,21 +113,23 @@ var _default = (function () {
             ReturnValues: 'ALL_OLD',
             Item: body
           };
-          var validationErrors = false;
+          var validationErrors = _this.validate(createParams, version);
 
           if (validationErrors) {
-            reject(validationErrors);
+            throw new Error(validationErrors);
           } else {
             _this.ddb.putItem(createParams, function (err, data) {
               if (err) {
-                reject(data);
+                console.log('Error caught', err);
+                throw new Error(err);
               } else {
                 resolve(data);
               }
             });
           }
         } catch (exception) {
-          reject('Create Exception: ' + exception);
+          console.log('Caught exception', exception);
+          throw new Error(exception);
         }
       });
     }
@@ -179,7 +176,7 @@ var _default = (function () {
         } else if (row.keytype === 'secondary') {
           newTable.Table.GlobalSecondaryIndexes.push(_this3.generateSecondaryIndex(row));
         } else {
-          return { error: 'Model has invalid index' };
+          throw new Error({ error: 'Model has invalid index' });
         }
       });
       if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
@@ -224,14 +221,15 @@ var _default = (function () {
         var table = _this5.schemas['1'].tableName;
         if (!table) {
           reject('No table defined');
+        } else {
+          _this5.ddb.scan({ 'TableName': table }, function (err, res) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res.Items);
+            }
+          });
         }
-        _this5.ddb.scan({ 'TableName': table }, function (err, res) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res.Items);
-          }
-        });
       });
     }
 
@@ -278,7 +276,7 @@ var _default = (function () {
       });
 
       if (!type) {
-        itemPromise = { error: 'No type' };
+        throw new Error({ error: 'No type' });
       } else {
         if (type === 'hash') {
           itemPromise = this.getItemByHash(obj);
@@ -368,7 +366,7 @@ var _default = (function () {
 
         _this8.ddb.batchGetItem(params, function (err, data) {
           if (err) {
-            reject(err);
+            throw new Error(err);
           } else {
             resolve(data);
           }
@@ -401,7 +399,7 @@ var _default = (function () {
         params.Key[key] = obj[key];
         _this9.ddb.getItem(params, function (err, data) {
           if (err) {
-            reject(err);
+            throw new Error(err);
           } else {
             resolve(data);
           }
@@ -426,13 +424,13 @@ var _default = (function () {
         var validationErrors = false;
 
         if (validationErrors) {
-          reject(validationErrors);
+          throw new Error(validationErrors);
         } else {
           (function () {
             var table = _this10.schemas['1'].tableName;
             var key = Object.keys(hashObject)[0];
             if (!table) {
-              reject('No table defined');
+              throw new Error('No table defined');
             }
             var params = {
               TableName: table,
@@ -458,7 +456,7 @@ var _default = (function () {
             });
             _this10.ddb.updateItem(params, function (err, data) {
               if (err) {
-                reject(err);
+                throw new Error(err);
               } else {
                 resolve(data.Attributes);
               }
@@ -483,7 +481,7 @@ var _default = (function () {
         var key = Object.keys(hashObject)[0];
         var table = _this11.schemas['1'].tableName;
         if (!table) {
-          reject('No table defined');
+          throw new Error('No table defined');
         }
         var params = {
           TableName: table,
@@ -492,7 +490,7 @@ var _default = (function () {
         params.Key[key] = hashObject[key];
         _this11.ddb.deleteItem(params, function (err, data) {
           if (err) {
-            reject(err);
+            throw new Error(err);
           } else {
             resolve(data);
           }

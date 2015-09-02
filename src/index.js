@@ -39,14 +39,9 @@ export default class {
    */
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
-    try {
-      newIndex = _.clone(tables.secondaryIndex, true);
-      newIndex.IndexName = params.value + '-index';
-      newIndex.KeySchema.push(this.generateKey(params));
-      return newIndex;
-    } catch (err) {
-      return err;
-    }
+    newIndex = _.clone(tables.secondaryIndex, true);
+    newIndex.IndexName = params.value + '-index';
+    newIndex.KeySchema.push(this.generateKey(params));
     return newIndex;
   }
 
@@ -80,7 +75,7 @@ export default class {
    * @param {Object} body Contents to create entry
    * @returns {Object} promise
    */
-  create(body) {
+  create(body, version) {
     return new Promise((resolve, reject) => {
       try {
         const createParams = {
@@ -88,21 +83,23 @@ export default class {
           ReturnValues: 'ALL_OLD',
           Item: body
         };
-        const validationErrors = false;
+        const validationErrors = this.validate(createParams, version);
 
         if (validationErrors) {
-          reject(validationErrors);
+          throw new Error(validationErrors);
         } else {
           this.ddb.putItem(createParams, function(err, data) {
             if (err) {
-              reject(data);
+              console.log('Error caught', err);
+              throw new Error(err);
             } else {
               resolve(data);
             }
           });
         }
       } catch (exception) {
-        reject('Create Exception: ' + exception);
+        console.log('Caught exception', exception)
+        throw new Error(exception);
       }
     });
   }
@@ -141,7 +138,7 @@ export default class {
       } else if (row.keytype === 'secondary') {
         newTable.Table.GlobalSecondaryIndexes.push(this.generateSecondaryIndex(row));
       } else {
-        return ({ error: 'Model has invalid index'});
+        throw new Error({ error: 'Model has invalid index'});
       }
     });
     if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
@@ -180,13 +177,15 @@ export default class {
       if (!table) {
         reject('No table defined');
       }
-      this.ddb.scan({'TableName': table}, (err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(res.Items);
-        }
-      });
+      else {
+        this.ddb.scan({'TableName': table}, (err, res) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res.Items);
+          }
+        });
+      }
     });
   }
 
@@ -227,7 +226,7 @@ export default class {
     });
 
     if (!type) {
-      itemPromise = {error: 'No type'};
+      throw new Error({error: 'No type'});
     } else {
       if (type === 'hash') {
         itemPromise = this.getItemByHash(obj);
@@ -309,7 +308,7 @@ export default class {
 
       this.ddb.batchGetItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          throw new Error(err);
         } else {
           resolve(data);
         }
@@ -338,7 +337,7 @@ export default class {
       params.Key[key] = obj[key];
       this.ddb.getItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          throw new Error(err);
         } else {
           resolve(data);
         }
@@ -360,12 +359,12 @@ export default class {
       const validationErrors = false;
 
       if (validationErrors) {
-        reject(validationErrors);
+        throw new Error(validationErrors);
       } else {
         const table = this.schemas['1'].tableName;
         const key = Object.keys(hashObject)[0];
         if (!table) {
-          reject('No table defined');
+          throw new Error('No table defined');
         }
         let params = {
           TableName: table,
@@ -393,7 +392,7 @@ export default class {
         });
         this.ddb.updateItem(params, function(err, data) {
           if (err) {
-            reject(err);
+            throw new Error(err);
           } else {
             resolve(data.Attributes);
           }
@@ -413,7 +412,7 @@ export default class {
       const key = Object.keys(hashObject)[0];
       const table = this.schemas['1'].tableName;
       if (!table) {
-        reject('No table defined');
+        throw new Error('No table defined');
       }
       let params = {
         TableName: table,
@@ -422,7 +421,7 @@ export default class {
       params.Key[key] = hashObject[key];
       this.ddb.deleteItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          throw new Error(err);
         } else {
           resolve(data);
         }

@@ -17,7 +17,32 @@ const numeric = new DynamoAdapter(dynamoConfig);
 numeric.setSchema('1', testNumericModel);
 standard.setSchema('1', testModel);
 
+
+const validate = (body) => {
+  // Test validation failure by passing `failValidate: true`
+  if (body.Item.failValidate) {
+    return { error: true };
+  }
+  // Mock passing validation, return null
+  return null;
+};
+
+// Mock sanitize method, this is automatically done by the model
+const sanitize = (body) => {
+  return body;
+};
+
+numeric.validate = validate;
+standard.validate = validate;
+
 describe('dynamo numeric tests', () => {
+  describe('get schema', () => {
+    it('Checks the schema', (done) => {
+      expect(numeric.getSchema()).to.be.an.object;
+      done();
+    })
+  });
+
   describe('table', () => {
     it('creates the numeric test table', (done) => {
       numeric.createTableFromModel().then((data) => {
@@ -29,8 +54,30 @@ describe('dynamo numeric tests', () => {
 
   describe('create', () => {
     it('Creates first entry', (done) => {
-      numeric.create(numericAccount.Item).then((data) => {
+      numeric.create(numericAccount.Item, '1').then((data) => {
         expect(data).to.be.an.object;
+        done();
+      });
+    });
+  });
+
+  describe('fail validation', () => {
+    it('Hardcode failure params to fail', (done) => {
+      numericAccount.Item.failValidate = true;
+      numeric.create(numericAccount.Item).then(done).catch((err) => {
+        console.log('Failed', err);
+        delete numericAccount.Item.failValidate;
+        expect(err).to.be.an.instanceof(Error);
+        done()
+      });
+    });
+  });
+
+  describe('fail create', () => {
+    it('Creates invalid params to fail', (done) => {
+      numeric.create({lol: 'trash'}).then(done).catch((err) => {
+        console.log('Got a proper fail', err);
+        expect(err).to.be.an.instanceof(Error);
         done();
       });
     });
@@ -85,7 +132,7 @@ describe('standard model', () => {
 
   describe('create', () => {
     it('Creates first entry', (done) => {
-      standard.create(testAccount1.Item).then((data) => {
+      standard.create(testAccount1.Item,'1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -94,7 +141,7 @@ describe('standard model', () => {
 
   describe('create', () => {
     it('Creates second entry', (done) => {
-      standard.create(testAccount2.Item).then((data) => {
+      standard.create(testAccount2.Item,'1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
