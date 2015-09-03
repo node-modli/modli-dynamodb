@@ -10,6 +10,7 @@ let DOC = require('dynamodb-doc');
 export default class {
   constructor(config) {
     AWS.config.update(config);
+    console.log('AWS Config:', AWS.config);
     this.schemas = {};
     this.ddb = new DOC.DynamoDB();
   }
