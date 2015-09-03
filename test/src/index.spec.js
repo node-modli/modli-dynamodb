@@ -18,10 +18,10 @@ const failAdapter = new DynamoAdapter(dynamoConfig);
 const nogsiAdapter = new DynamoAdapter(dynamoConfig);
 
 // Set the schemas
-numeric.setSchema('1', testNumericModel);
-standard.setSchema('1', testModel);
-failAdapter.setSchema('1', badModel);
-nogsiAdapter.setSchema('1', nogsiModel);
+numeric.setSchema(testNumericModel, '1');
+standard.setSchema(testModel, '1');
+failAdapter.setSchema(badModel, '1');
+nogsiAdapter.setSchema(nogsiModel, '1');
 
 const validate = (body) => {
   // Test validation failure by passing `failValidate: true`

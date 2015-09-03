@@ -5,43 +5,40 @@ let AWS = require('aws-sdk');
 let DOC = require('dynamodb-doc');
 
 /**
+ * Class constructor
  * @class dynamodb
  */
 export default class {
   constructor(config) {
     AWS.config.update(config);
-    console.log('AWS Config:', AWS.config);
     this.schemas = {};
     this.ddb = new DOC.DynamoDB();
   }
 
   /*
-   * Sets the schema the model
-   * Makes deterministic calls and validation possible
+   * Sets the schema for the model
    * @memberof dynamodb
-   * @param {String} [version] The version of the model
-   * @param {Object}
+   * @param {String} version The version of the model
+   * @param {Object} schema Json Object with schema information
    */
-  setSchema(version, schema) {
+  setSchema(schema, version = false) {
     this.schemas[version] = schema;
   }
 
   /*
-   * Helper Method
    * Returns the active schema
    * @memberof dynamodb
-   *
+   * @returns {Object} Current JSON Schema Object
    */
   getSchema() {
     return this.schemas;
   }
 
   /*
-   * Helper Method
    * Generates a secondary index for a new table
    * @memberof dynamodb
    * @param {Object} Parameters to deterministically generate a secondary index
-   * @returns {Object}
+   * @returns {Object} New Index
    */
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
@@ -52,11 +49,10 @@ export default class {
   }
 
   /*
-   * Helper Method
    * Generates a definition for a create call
    * @memberof dynamodb
    * @param {Object} Parameters to deterministically generate a definition
-   * Returns {Object} New Definition
+   * @returns {Object} New Definition
    */
   generateDefinition(params) {
     let newDefinition = _.clone(tables.attribute, true);
@@ -66,7 +62,6 @@ export default class {
   }
 
   /*
-   * Helper Method
    * Generates a key for a create call
    * @memberof dynamodb
    * @param {Object} params Parameters to deterministically generate a key
@@ -113,10 +108,9 @@ export default class {
   }
 
   /**
-   * Passthrough method
    * Calls create table using explcit table creation parameters
    * @memberof dynamodb
-   * @params {Object} body Contents to create table
+   * @param {Object} body Contents to create table
    * @returns {Object} promise
    */
   createTable(params) {
@@ -158,7 +152,8 @@ export default class {
   /**
    * Deterministic method to call create table using the model as the reference
    * @memberof dynamodb
-   * @params {Object} {HASHNAME: VALUE}
+   * @param {Object} params Parameters to find table and delete by
+   *   @property {TableName: VALUE}
    * @returns {Object} promise
    */
   deleteTable(params) {
@@ -172,7 +167,6 @@ export default class {
       });
     });
   }
-
 
   /**
    * Performs a full unfiltered scan
@@ -212,9 +206,9 @@ export default class {
 
   /**
    * Deterministic method to read a value from an object.
-   * Will use the model as a reference to construct the proper query
    * @memberof dynamodb
-   * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @param {Object} obj
+   *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
   read(obj) {
@@ -246,7 +240,8 @@ export default class {
   /**
    * Reads from the database by secondary index
    * @memberof dynamodb
-   * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @param {Object} obj The object to search by secondary index on
+   *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
   getItemById(obj) {
@@ -274,10 +269,9 @@ export default class {
 
   /**
     * Returns a list of objects in an array
-    * Searched by the hashObject
-    * Example: getItemsInArray('id',[1,2,3,4])
     * @memberof dynamodb
-    * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
+    * @param {String} hash Name of the hash to search on
+    * @param {Array} array Array of values to search in
     * @returns {Object} promise
     */
   getItemsInArray(hash, array) {
@@ -321,7 +315,8 @@ export default class {
   /**
    * Reads from the database by hash value
    * @memberof dynamodb
-   * @param {Object} query Specific id or query to construct read
+   * @param {Object} obj The hash object to search by
+   *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
   getItemByHash(obj) {
@@ -347,8 +342,9 @@ export default class {
   /**
    * Updates an entry in the database
    * @memberof dynamodb
-   * @param {String} query Query to locate entries to update
-   * @param {Object} body Contents to update
+   * @param {Object} hashObject The object to search for to update
+   *   @property {string} hash/index - Example { authId: '1234'}
+   * @param {Object} updatedValuesArray An array of values to update on the found row
    * @returns {Object} promise
    */
   update(hashObject, updatedValuesArray) {
@@ -399,7 +395,8 @@ export default class {
   /**
    * Deletes an item from the database
    * @memberof dynamodb
-   * @param {Object} query Query to locate entries to delete
+   * @param {Object} hashObject The object to find by hash, to delete
+   *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
   delete(hashObject) {
