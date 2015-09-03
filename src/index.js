@@ -15,7 +15,7 @@ export default class {
     this.ddb = new DOC.DynamoDB();
   }
 
-  /*
+  /**
    * Sets the schema for the model
    * @memberof dynamodb
    * @param {String} version The version of the model
@@ -25,7 +25,7 @@ export default class {
     this.schemas[version] = schema;
   }
 
-  /*
+  /**
    * Returns the active schema
    * @memberof dynamodb
    * @returns {Object} Current JSON Schema Object
@@ -34,7 +34,7 @@ export default class {
     return this.schemas;
   }
 
-  /*
+  /**
    * Generates a secondary index for a new table
    * @memberof dynamodb
    * @param {Object} Parameters to deterministically generate a secondary index
@@ -48,7 +48,7 @@ export default class {
     return newIndex;
   }
 
-  /*
+  /**
    * Generates a definition for a create call
    * @memberof dynamodb
    * @param {Object} Parameters to deterministically generate a definition
@@ -61,7 +61,7 @@ export default class {
     return newDefinition;
   }
 
-  /*
+  /**
    * Generates a key for a create call
    * @memberof dynamodb
    * @param {Object} params Parameters to deterministically generate a key
