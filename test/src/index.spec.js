@@ -6,7 +6,7 @@ import { testAccount1, testAccount2, testModel, testNumericModel, badModel, nogs
 
 let dynamoConfig = {
   region: 'us-east-1',
-  endpoint: 'http://localhost:8000',
+  endpoint: process.env.MODLI_DYANMODB_HOST,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID || '123456789',
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '123456789'
 };

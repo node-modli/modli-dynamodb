@@ -5,7 +5,7 @@ let AWS = require('aws-sdk');
 let DOC = require('dynamodb-doc');
 
 /**
- * Default class for the DynamoAdapter
+ * @class dynamodb
  */
 export default class {
   constructor(config) {
@@ -17,7 +17,9 @@ export default class {
   /*
    * Sets the schema the model
    * Makes deterministic calls and validation possible
-   *
+   * @memberof dynamodb
+   * @param {String} [version] The version of the model
+   * @param {Object}
    */
   setSchema(version, schema) {
     this.schemas[version] = schema;
@@ -26,6 +28,7 @@ export default class {
   /*
    * Helper Method
    * Returns the active schema
+   * @memberof dynamodb
    *
    */
   getSchema() {
@@ -35,7 +38,9 @@ export default class {
   /*
    * Helper Method
    * Generates a secondary index for a new table
-   *
+   * @memberof dynamodb
+   * @param {Object} Parameters to deterministically generate a secondary index
+   * @returns {Object}
    */
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
@@ -48,7 +53,9 @@ export default class {
   /*
    * Helper Method
    * Generates a definition for a create call
-   *
+   * @memberof dynamodb
+   * @param {Object} Parameters to deterministically generate a definition
+   * Returns {Object} New Definition
    */
   generateDefinition(params) {
     let newDefinition = _.clone(tables.attribute, true);
@@ -60,7 +67,9 @@ export default class {
   /*
    * Helper Method
    * Generates a key for a create call
-   *
+   * @memberof dynamodb
+   * @param {Object} params Parameters to deterministically generate a key
+   * @returns {Object} New attribute
    */
   generateKey(params) {
     let newAtrribute = _.clone(tables.keyData, true);
@@ -71,7 +80,7 @@ export default class {
 
   /**
    * Creates a new entry in the database
-   * @memberof dynamo
+   * @memberof dynamodb
    * @param {Object} body Contents to create entry
    * @returns {Object} promise
    */
@@ -104,8 +113,8 @@ export default class {
 
   /**
    * Passthrough method
-   * @memberof dynamo
    * Calls create table using explcit table creation parameters
+   * @memberof dynamodb
    * @params {Object} body Contents to create table
    * @returns {Object} promise
    */
@@ -123,7 +132,7 @@ export default class {
 
   /**
    * Deterministic method to call create table using the model as the reference
-   * @memberof dynamo
+   * @memberof dynamodb
    * @returns {Object} promise
    */
   createTableFromModel() {
@@ -147,9 +156,9 @@ export default class {
 
   /**
    * Deterministic method to call create table using the model as the reference
-   * @memberof dynamo
-   * @params {HASHNAME: VALUE}
-   * @returns {Object} promise - {}
+   * @memberof dynamodb
+   * @params {Object} {HASHNAME: VALUE}
+   * @returns {Object} promise
    */
   deleteTable(params) {
     return new Promise((resolve, reject) => {
@@ -166,8 +175,8 @@ export default class {
 
   /**
    * Performs a full unfiltered scan
-   * @memberof dynamo
-   * @returns {Object} promise - array of items
+   * @memberof dynamodb
+   * @returns {Object} promise
    */
   scan() {
     return new Promise((resolve, reject) => {
@@ -184,8 +193,8 @@ export default class {
 
   /**
    * Gets a list of available tables
-   * @memberof dynamo
-   * @returns {Object} promise - Array of tables
+   * @memberof dynamodb
+   * @returns {Object} promise
    */
   list() {
     return new Promise((resolve, reject) => {
@@ -203,8 +212,8 @@ export default class {
   /**
    * Deterministic method to read a value from an object.
    * Will use the model as a reference to construct the proper query
-   * @memberof dynamo
-   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @memberof dynamodb
+   * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
    * @returns {Object} promise
    */
   read(obj) {
@@ -235,8 +244,8 @@ export default class {
 
   /**
    * Reads from the database by secondary index
-   * @memberof dynamo
-   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @memberof dynamodb
+   * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
    * @returns {Object} promise
    */
   getItemById(obj) {
@@ -266,8 +275,8 @@ export default class {
     * Returns a list of objects in an array
     * Searched by the hashObject
     * Example: getItemsInArray('id',[1,2,3,4])
-    * @memberof dynamo
-    * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+    * @memberof dynamodb
+    * @params {Object} {HASHNAME/SECONDARYINDEX NAME: VALUE}
     * @returns {Object} promise
     */
   getItemsInArray(hash, array) {
@@ -310,11 +319,10 @@ export default class {
 
   /**
    * Reads from the database by hash value
-   * @memberof dynamo
+   * @memberof dynamodb
    * @param {Object} query Specific id or query to construct read
    * @returns {Object} promise
    */
-  // TODO: Test this with numeric indexes..
   getItemByHash(obj) {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
@@ -337,7 +345,7 @@ export default class {
 
   /**
    * Updates an entry in the database
-   * @memberof dynamo
+   * @memberof dynamodb
    * @param {String} query Query to locate entries to update
    * @param {Object} body Contents to update
    * @returns {Object} promise
@@ -389,7 +397,7 @@ export default class {
 
   /**
    * Deletes an item from the database
-   * @memberof dynamo
+   * @memberof dynamodb
    * @param {Object} query Query to locate entries to delete
    * @returns {Object} promise
    */
@@ -415,7 +423,7 @@ export default class {
 
   /**
   * Extends the dynamo object
-  * @memberof dynamo
+  * @memberof dynamodb
   * @param {String} name The name of the method
   * @param {Function} fn The function to extend on the object
   */
