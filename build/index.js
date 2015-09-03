@@ -120,15 +120,13 @@ var _default = (function () {
           } else {
             _this.ddb.putItem(createParams, function (err, data) {
               if (err) {
-                console.log('Error caught', err);
-                throw new Error(err);
+                reject(err);
               } else {
                 resolve(data);
               }
             });
           }
         } catch (exception) {
-          console.log('Caught exception', exception);
           throw new Error(exception);
         }
       });
@@ -176,7 +174,7 @@ var _default = (function () {
         } else if (row.keytype === 'secondary') {
           newTable.Table.GlobalSecondaryIndexes.push(_this3.generateSecondaryIndex(row));
         } else {
-          throw new Error({ error: 'Model has invalid index' });
+          return new Error({ error: 'Model has invalid index' });
         }
       });
       if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
@@ -219,17 +217,13 @@ var _default = (function () {
 
       return new Promise(function (resolve, reject) {
         var table = _this5.schemas['1'].tableName;
-        if (!table) {
-          reject('No table defined');
-        } else {
-          _this5.ddb.scan({ 'TableName': table }, function (err, res) {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(res.Items);
-            }
-          });
-        }
+        _this5.ddb.scan({ 'TableName': table }, function (err, res) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res.Items);
+          }
+        });
       });
     }
 
@@ -245,6 +239,7 @@ var _default = (function () {
 
       return new Promise(function (resolve, reject) {
         _this6.ddb.listTables({}, function (err, res) {
+          /* istanbul ignore if */
           if (err) {
             reject(err);
           } else {
@@ -264,27 +259,31 @@ var _default = (function () {
   }, {
     key: 'read',
     value: function read(obj) {
-      var key = Object.keys(obj)[0];
-      var itemPromise = null;
-      var type = null;
+      var _this7 = this;
 
-      _.each(this.schemas['1'].indexes, function (row) {
-        if (row.value === key) {
-          type = row.keytype;
-          return false;
-        }
-      });
+      return new Promise(function (resolve, reject) {
+        var key = Object.keys(obj)[0];
+        var itemPromise = null;
+        var type = null;
 
-      if (!type) {
-        throw new Error({ error: 'No type' });
-      } else {
-        if (type === 'hash') {
-          itemPromise = this.getItemByHash(obj);
+        _.each(_this7.schemas['1'].indexes, function (row) {
+          if (row.value === key) {
+            type = row.keytype;
+            return false;
+          }
+        });
+
+        if (!type) {
+          reject(new Error('No type'));
         } else {
-          itemPromise = this.getItemById(obj);
+          if (type === 'hash') {
+            itemPromise = _this7.getItemByHash(obj);
+          } else {
+            itemPromise = _this7.getItemById(obj);
+          }
         }
-      }
-      return itemPromise;
+        resolve(itemPromise);
+      });
     }
 
     /**
@@ -296,13 +295,10 @@ var _default = (function () {
   }, {
     key: 'getItemById',
     value: function getItemById(obj) {
-      var _this7 = this;
+      var _this8 = this;
 
       return new Promise(function (resolve, reject) {
-        var table = _this7.schemas['1'].tableName;
-        if (!table) {
-          reject('No table defined');
-        }
+        var table = _this8.schemas['1'].tableName;
         var key = Object.keys(obj)[0];
         var params = {
           TableName: table,
@@ -313,11 +309,11 @@ var _default = (function () {
           }
         };
 
-        _this7.ddb.query(params, function (err, data) {
+        _this8.ddb.query(params, function (err, data) {
           if (err) {
             reject(err);
           } else {
-            resolve(data);
+            resolve(_this8.sanitize(data));
           }
         });
       });
@@ -334,22 +330,16 @@ var _default = (function () {
   }, {
     key: 'getItemsInArray',
     value: function getItemsInArray(hash, array) {
-      var _this8 = this;
+      var _this9 = this;
 
       return new Promise(function (resolve, reject) {
         if (!array) {
-          reject('Array empty');
-          return false;
+          reject(new Error('Array empty'));
         }
         if (array.length < 1) {
-          reject('Array contained no values');
-          return false;
+          reject(new Error('Array contained no values'));
         }
-        var table = _this8.schemas['1'].tableName;
-        if (!table) {
-          reject('No table defined');
-        }
-
+        var table = _this9.schemas['1'].tableName;
         var params = {
           RequestItems: {}
         };
@@ -364,11 +354,18 @@ var _default = (function () {
           params.RequestItems[table].Keys.push(newObj);
         });
 
-        _this8.ddb.batchGetItem(params, function (err, data) {
+        _this9.ddb.batchGetItem(params, function (err, data) {
           if (err) {
-            throw new Error(err);
+            reject(new Error(err));
           } else {
-            resolve(data);
+            (function () {
+              var returnArray = [];
+              var sanitize = _this9.sanitize;
+              _.each(data, function (row) {
+                returnArray.push(sanitize(row));
+              });
+              resolve(returnArray);
+            })();
           }
         });
       });
@@ -384,24 +381,21 @@ var _default = (function () {
   }, {
     key: 'getItemByHash',
     value: function getItemByHash(obj) {
-      var _this9 = this;
+      var _this10 = this;
 
       return new Promise(function (resolve, reject) {
-        var table = _this9.schemas['1'].tableName;
-        if (!table) {
-          reject('No table defined');
-        }
+        var table = _this10.schemas['1'].tableName;
         var key = Object.keys(obj)[0];
         var params = {
           TableName: table,
           Key: {}
         };
         params.Key[key] = obj[key];
-        _this9.ddb.getItem(params, function (err, data) {
+        _this10.ddb.getItem(params, function (err, data) {
           if (err) {
-            throw new Error(err);
+            reject(new Error(err));
           } else {
-            resolve(data);
+            resolve(_this10.sanitize(data));
           }
         });
       });
@@ -417,21 +411,18 @@ var _default = (function () {
   }, {
     key: 'update',
     value: function update(hashObject, updatedValuesArray) {
-      var _this10 = this;
+      var _this11 = this;
 
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
-        var validationErrors = false;
-
+        var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
         if (validationErrors) {
-          throw new Error(validationErrors);
+          reject(new Error(validationErrors));
         } else {
           (function () {
-            var table = _this10.schemas['1'].tableName;
+            var table = _this11.schemas['1'].tableName;
             var key = Object.keys(hashObject)[0];
-            if (!table) {
-              throw new Error('No table defined');
-            }
+
             var params = {
               TableName: table,
               Key: {},
@@ -454,9 +445,9 @@ var _default = (function () {
                 params.UpdateExpression += ', #param' + i + ' = :val' + i;
               }
             });
-            _this10.ddb.updateItem(params, function (err, data) {
+            _this11.ddb.updateItem(params, function (err, data) {
               if (err) {
-                throw new Error(err);
+                reject(new Error(err));
               } else {
                 resolve(data.Attributes);
               }
@@ -475,22 +466,20 @@ var _default = (function () {
   }, {
     key: 'delete',
     value: function _delete(hashObject) {
-      var _this11 = this;
+      var _this12 = this;
 
       return new Promise(function (resolve, reject) {
         var key = Object.keys(hashObject)[0];
-        var table = _this11.schemas['1'].tableName;
-        if (!table) {
-          throw new Error('No table defined');
-        }
+        var table = _this12.schemas['1'].tableName;
+
         var params = {
           TableName: table,
           Key: {}
         };
         params.Key[key] = hashObject[key];
-        _this11.ddb.deleteItem(params, function (err, data) {
+        _this12.ddb.deleteItem(params, function (err, data) {
           if (err) {
-            throw new Error(err);
+            reject(new Error(err));
           } else {
             resolve(data);
           }

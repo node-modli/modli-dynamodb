@@ -98,3 +98,28 @@ export const testNumericModel = {
     permissions: {}
   }
 };
+
+export const badModel = {
+  name: 'tmpuser',
+  version: 1,
+  indexes: [
+    { keytype: 'junk', value: 'id', type: 'S'},
+    { keytype: 'secondary', value: 'authId', type: 'S'}
+  ],
+  tableName: null,
+  schema: {
+    permissions: {}
+  }
+};
+
+export const nogsiModel = {
+  name: 'nogscis',
+  version: 1,
+  indexes: [
+    { keytype: 'junk', value: 'id', type: 'S'}
+  ],
+  tableName: 'trash',
+  schema: {
+    permissions: {}
+  }
+};

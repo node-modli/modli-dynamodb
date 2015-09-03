@@ -90,15 +90,13 @@ export default class {
         } else {
           this.ddb.putItem(createParams, function(err, data) {
             if (err) {
-              console.log('Error caught', err);
-              throw new Error(err);
+              reject(err);
             } else {
               resolve(data);
             }
           });
         }
       } catch (exception) {
-        console.log('Caught exception', exception)
         throw new Error(exception);
       }
     });
@@ -138,7 +136,7 @@ export default class {
       } else if (row.keytype === 'secondary') {
         newTable.Table.GlobalSecondaryIndexes.push(this.generateSecondaryIndex(row));
       } else {
-        throw new Error({ error: 'Model has invalid index'});
+        return new Error({ error: 'Model has invalid index'});
       }
     });
     if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
@@ -174,18 +172,13 @@ export default class {
   scan() {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
-      else {
-        this.ddb.scan({'TableName': table}, (err, res) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res.Items);
-          }
-        });
-      }
+      this.ddb.scan({'TableName': table}, (err, res) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(res.Items);
+        }
+      });
     });
   }
 
@@ -197,6 +190,7 @@ export default class {
   list() {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, res) => {
+        /* istanbul ignore if */
         if (err) {
           reject(err);
         } else {
@@ -214,27 +208,29 @@ export default class {
    * @returns {Object} promise
    */
   read(obj) {
-    const key = Object.keys(obj)[0];
-    let itemPromise = null;
-    let type = null;
+    return new Promise((resolve, reject) => {
+      const key = Object.keys(obj)[0];
+      let itemPromise = null;
+      let type = null;
 
-    _.each(this.schemas['1'].indexes, function(row) {
-      if (row.value === key) {
-        type = row.keytype;
-        return false;
-      }
-    });
+      _.each(this.schemas['1'].indexes, function(row) {
+        if (row.value === key) {
+          type = row.keytype;
+          return false;
+        }
+      });
 
-    if (!type) {
-      throw new Error({error: 'No type'});
-    } else {
-      if (type === 'hash') {
-        itemPromise = this.getItemByHash(obj);
+      if (!type) {
+        reject(new Error('No type'));
       } else {
-        itemPromise = this.getItemById(obj);
+        if (type === 'hash') {
+          itemPromise = this.getItemByHash(obj);
+        } else {
+          itemPromise = this.getItemById(obj);
+        }
       }
-    }
-    return itemPromise;
+      resolve(itemPromise);
+    });
   }
 
   /**
@@ -246,9 +242,6 @@ export default class {
   getItemById(obj) {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
       const key = Object.keys(obj)[0];
       const params = {
         TableName: table,
@@ -263,7 +256,7 @@ export default class {
         if (err) {
           reject(err);
         } else {
-          resolve(data);
+          resolve(this.sanitize(data));
         }
       });
     });
@@ -280,18 +273,12 @@ export default class {
   getItemsInArray(hash, array) {
     return new Promise((resolve, reject) => {
       if (!array) {
-        reject('Array empty');
-        return false;
+        reject(new Error('Array empty'));
       }
       if (array.length < 1) {
-        reject('Array contained no values');
-        return false;
+        reject(new Error('Array contained no values'));
       }
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
-
       let params = {
         RequestItems: {}
       };
@@ -308,9 +295,14 @@ export default class {
 
       this.ddb.batchGetItem(params, (err, data) => {
         if (err) {
-          throw new Error(err);
+          reject(new Error(err));
         } else {
-          resolve(data);
+          let returnArray = [];
+          const sanitize = this.sanitize;
+          _.each(data, function(row) {
+            returnArray.push(sanitize(row));
+          });
+          resolve(returnArray);
         }
       });
     });
@@ -326,9 +318,6 @@ export default class {
   getItemByHash(obj) {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
       const key = Object.keys(obj)[0];
       let params = {
         TableName: table,
@@ -337,9 +326,9 @@ export default class {
       params.Key[key] = obj[key];
       this.ddb.getItem(params, (err, data) => {
         if (err) {
-          throw new Error(err);
+          reject(new Error(err));
         } else {
-          resolve(data);
+          resolve(this.sanitize(data));
         }
       });
     });
@@ -356,16 +345,13 @@ export default class {
   update(hashObject, updatedValuesArray) {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
-      const validationErrors = false;
-
+      const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
       if (validationErrors) {
-        throw new Error(validationErrors);
+        reject(new Error(validationErrors));
       } else {
         const table = this.schemas['1'].tableName;
         const key = Object.keys(hashObject)[0];
-        if (!table) {
-          throw new Error('No table defined');
-        }
+
         let params = {
           TableName: table,
           Key: {},
@@ -392,7 +378,7 @@ export default class {
         });
         this.ddb.updateItem(params, function(err, data) {
           if (err) {
-            throw new Error(err);
+            reject(new Error(err));
           } else {
             resolve(data.Attributes);
           }
@@ -411,9 +397,7 @@ export default class {
     return new Promise((resolve, reject) => {
       const key = Object.keys(hashObject)[0];
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        throw new Error('No table defined');
-      }
+
       let params = {
         TableName: table,
         Key: {}
@@ -421,7 +405,7 @@ export default class {
       params.Key[key] = hashObject[key];
       this.ddb.deleteItem(params, (err, data) => {
         if (err) {
-          throw new Error(err);
+          reject(new Error(err));
         } else {
           resolve(data);
         }
