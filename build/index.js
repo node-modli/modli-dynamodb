@@ -17,7 +17,8 @@ var AWS = require('aws-sdk');
 var DOC = require('dynamodb-doc');
 
 /**
- * Default class for the DynamoAdapter
+ * Class constructor
+ * @class dynamodb
  */
 
 var _default = (function () {
@@ -30,21 +31,24 @@ var _default = (function () {
   }
 
   /*
-   * Sets the schema the model
-   * Makes deterministic calls and validation possible
-   *
+   * Sets the schema for the model
+   * @memberof dynamodb
+   * @param {String} version The version of the model
+   * @param {Object} schema Json Object with schema information
    */
 
   _createClass(_default, [{
     key: 'setSchema',
-    value: function setSchema(version, schema) {
+    value: function setSchema(schema) {
+      var version = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
       this.schemas[version] = schema;
     }
 
     /*
-     * Helper Method
      * Returns the active schema
-     *
+     * @memberof dynamodb
+     * @returns {Object} Current JSON Schema Object
      */
   }, {
     key: 'getSchema',
@@ -53,9 +57,10 @@ var _default = (function () {
     }
 
     /*
-     * Helper Method
      * Generates a secondary index for a new table
-     *
+     * @memberof dynamodb
+     * @param {Object} Parameters to deterministically generate a secondary index
+     * @returns {Object} New Index
      */
   }, {
     key: 'generateSecondaryIndex',
@@ -68,9 +73,10 @@ var _default = (function () {
     }
 
     /*
-     * Helper Method
      * Generates a definition for a create call
-     *
+     * @memberof dynamodb
+     * @param {Object} Parameters to deterministically generate a definition
+     * @returns {Object} New Definition
      */
   }, {
     key: 'generateDefinition',
@@ -82,9 +88,10 @@ var _default = (function () {
     }
 
     /*
-     * Helper Method
      * Generates a key for a create call
-     *
+     * @memberof dynamodb
+     * @param {Object} params Parameters to deterministically generate a key
+     * @returns {Object} New attribute
      */
   }, {
     key: 'generateKey',
@@ -97,7 +104,7 @@ var _default = (function () {
 
     /**
      * Creates a new entry in the database
-     * @memberof dynamo
+     * @memberof dynamodb
      * @param {Object} body Contents to create entry
      * @returns {Object} promise
      */
@@ -133,10 +140,9 @@ var _default = (function () {
     }
 
     /**
-     * Passthrough method
-     * @memberof dynamo
      * Calls create table using explcit table creation parameters
-     * @params {Object} body Contents to create table
+     * @memberof dynamodb
+     * @param {Object} body Contents to create table
      * @returns {Object} promise
      */
   }, {
@@ -157,7 +163,7 @@ var _default = (function () {
 
     /**
      * Deterministic method to call create table using the model as the reference
-     * @memberof dynamo
+     * @memberof dynamodb
      * @returns {Object} promise
      */
   }, {
@@ -185,9 +191,10 @@ var _default = (function () {
 
     /**
      * Deterministic method to call create table using the model as the reference
-     * @memberof dynamo
-     * @params {HASHNAME: VALUE}
-     * @returns {Object} promise - {}
+     * @memberof dynamodb
+     * @param {Object} params Parameters to find table and delete by
+     *   @property {TableName: VALUE}
+     * @returns {Object} promise
      */
   }, {
     key: 'deleteTable',
@@ -207,8 +214,8 @@ var _default = (function () {
 
     /**
      * Performs a full unfiltered scan
-     * @memberof dynamo
-     * @returns {Object} promise - array of items
+     * @memberof dynamodb
+     * @returns {Object} promise
      */
   }, {
     key: 'scan',
@@ -229,8 +236,8 @@ var _default = (function () {
 
     /**
      * Gets a list of available tables
-     * @memberof dynamo
-     * @returns {Object} promise - Array of tables
+     * @memberof dynamodb
+     * @returns {Object} promise
      */
   }, {
     key: 'list',
@@ -251,9 +258,9 @@ var _default = (function () {
 
     /**
      * Deterministic method to read a value from an object.
-     * Will use the model as a reference to construct the proper query
-     * @memberof dynamo
-     * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+     * @memberof dynamodb
+     * @param {Object} obj
+     *   @property {string} hash/index - Example { authId: '1234'}
      * @returns {Object} promise
      */
   }, {
@@ -288,8 +295,9 @@ var _default = (function () {
 
     /**
      * Reads from the database by secondary index
-     * @memberof dynamo
-     * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+     * @memberof dynamodb
+     * @param {Object} obj The object to search by secondary index on
+     *   @property {string} hash/index - Example { authId: '1234'}
      * @returns {Object} promise
      */
   }, {
@@ -321,10 +329,9 @@ var _default = (function () {
 
     /**
       * Returns a list of objects in an array
-      * Searched by the hashObject
-      * Example: getItemsInArray('id',[1,2,3,4])
-      * @memberof dynamo
-      * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+      * @memberof dynamodb
+      * @param {String} hash Name of the hash to search on
+      * @param {Array} array Array of values to search in
       * @returns {Object} promise
       */
   }, {
@@ -373,11 +380,11 @@ var _default = (function () {
 
     /**
      * Reads from the database by hash value
-     * @memberof dynamo
-     * @param {Object} query Specific id or query to construct read
+     * @memberof dynamodb
+     * @param {Object} obj The hash object to search by
+     *   @property {string} hash/index - Example { authId: '1234'}
      * @returns {Object} promise
      */
-    // TODO: Test this with numeric indexes..
   }, {
     key: 'getItemByHash',
     value: function getItemByHash(obj) {
@@ -403,9 +410,10 @@ var _default = (function () {
 
     /**
      * Updates an entry in the database
-     * @memberof dynamo
-     * @param {String} query Query to locate entries to update
-     * @param {Object} body Contents to update
+     * @memberof dynamodb
+     * @param {Object} hashObject The object to search for to update
+     *   @property {string} hash/index - Example { authId: '1234'}
+     * @param {Object} updatedValuesArray An array of values to update on the found row
      * @returns {Object} promise
      */
   }, {
@@ -459,8 +467,9 @@ var _default = (function () {
 
     /**
      * Deletes an item from the database
-     * @memberof dynamo
-     * @param {Object} query Query to locate entries to delete
+     * @memberof dynamodb
+     * @param {Object} hashObject The object to find by hash, to delete
+     *   @property {string} hash/index - Example { authId: '1234'}
      * @returns {Object} promise
      */
   }, {
@@ -489,7 +498,7 @@ var _default = (function () {
 
     /**
     * Extends the dynamo object
-    * @memberof dynamo
+    * @memberof dynamodb
     * @param {String} name The name of the method
     * @param {Function} fn The function to extend on the object
     */

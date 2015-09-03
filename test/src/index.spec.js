@@ -6,7 +6,7 @@ import { testAccount1, testAccount2, testModel, testNumericModel, badModel, nogs
 
 let dynamoConfig = {
   region: 'us-east-1',
-  endpoint: 'http://localhost:8000',
+  endpoint: process.env.MODLI_DYNAMODB_HOST,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID || '123456789',
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '123456789'
 };
@@ -18,10 +18,10 @@ const failAdapter = new DynamoAdapter(dynamoConfig);
 const nogsiAdapter = new DynamoAdapter(dynamoConfig);
 
 // Set the schemas
-numeric.setSchema('1', testNumericModel);
-standard.setSchema('1', testModel);
-failAdapter.setSchema('1', badModel);
-nogsiAdapter.setSchema('1', nogsiModel);
+numeric.setSchema(testNumericModel, '1');
+standard.setSchema(testModel, '1');
+failAdapter.setSchema(badModel, '1');
+nogsiAdapter.setSchema(nogsiModel, '1');
 
 const validate = (body) => {
   // Test validation failure by passing `failValidate: true`
