@@ -18,7 +18,7 @@ npm install modli-dynamodb --save
 
 ```javascript
 import { model, adapter, Joi, use } from 'modli';
-import { dynamodb } from 'modli-dynamodb';
+import dynamodb from 'modli-dynamodb';
 
 // Set your configuration
 let dynamoConfig = {
