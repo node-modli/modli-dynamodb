@@ -5,7 +5,7 @@ let AWS = require('aws-sdk');
 let DOC = require('dynamodb-doc');
 
 /**
- * @namespace dynamo
+ * Default class for the DynamoAdapter
  */
 export default class {
   constructor(config) {
@@ -14,27 +14,42 @@ export default class {
     this.ddb = new DOC.DynamoDB();
   }
 
+  /*
+   * Sets the schema the model
+   * Makes deterministic calls and validation possible
+   *
+   */
   setSchema(version, schema) {
     this.schemas[version] = schema;
   }
 
+  /*
+   * Helper Method
+   * Returns the active schema
+   *
+   */
   getSchema() {
     return this.schemas;
   }
 
+  /*
+   * Helper Method
+   * Generates a secondary index for a new table
+   *
+   */
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
-    try {
-      newIndex = _.clone(tables.secondaryIndex, true);
-      newIndex.IndexName = params.value + '-index';
-      newIndex.KeySchema.push(this.generateKey(params));
-      return newIndex;
-    } catch (err) {
-      return err;
-    }
+    newIndex = _.clone(tables.secondaryIndex, true);
+    newIndex.IndexName = params.value + '-index';
+    newIndex.KeySchema.push(this.generateKey(params));
     return newIndex;
   }
 
+  /*
+   * Helper Method
+   * Generates a definition for a create call
+   *
+   */
   generateDefinition(params) {
     let newDefinition = _.clone(tables.attribute, true);
     newDefinition.AttributeName = params.value;
@@ -42,7 +57,11 @@ export default class {
     return newDefinition;
   }
 
-  // TODO: Test with ranges
+  /*
+   * Helper Method
+   * Generates a key for a create call
+   *
+   */
   generateKey(params) {
     let newAtrribute = _.clone(tables.keyData, true);
     newAtrribute.AttributeName = params.value;
@@ -56,9 +75,7 @@ export default class {
    * @param {Object} body Contents to create entry
    * @returns {Object} promise
    */
-  // TODO: Double check validation
-  create(body) {
-      // Return promise
+  create(body, version) {
     return new Promise((resolve, reject) => {
       try {
         const createParams = {
@@ -66,28 +83,32 @@ export default class {
           ReturnValues: 'ALL_OLD',
           Item: body
         };
-        const validationErrors = false;
-        // TODO: Fix validation
-        // const validationErrors = dynamo.validate(body);
-        /* istanbul ignore if */
+        const validationErrors = this.validate(createParams, version);
+
         if (validationErrors) {
-          reject(validationErrors);
+          throw new Error(validationErrors);
         } else {
           this.ddb.putItem(createParams, function(err, data) {
             if (err) {
-              reject(data);
+              reject(err);
             } else {
               resolve(data);
             }
           });
         }
       } catch (exception) {
-        reject('Create Exception: ' + exception);
+        throw new Error(exception);
       }
     });
   }
 
-
+  /**
+   * Passthrough method
+   * @memberof dynamo
+   * Calls create table using explcit table creation parameters
+   * @params {Object} body Contents to create table
+   * @returns {Object} promise
+   */
   createTable(params) {
     return new Promise((resolve, reject) => {
       this.ddb.createTable(params, (err, res) => {
@@ -100,6 +121,11 @@ export default class {
     });
   }
 
+  /**
+   * Deterministic method to call create table using the model as the reference
+   * @memberof dynamo
+   * @returns {Object} promise
+   */
   createTableFromModel() {
     let newTable = _.clone(tables.table, true);
     newTable.Table.TableName = this.schemas['1'].tableName;
@@ -110,15 +136,21 @@ export default class {
       } else if (row.keytype === 'secondary') {
         newTable.Table.GlobalSecondaryIndexes.push(this.generateSecondaryIndex(row));
       } else {
-        return ({ error: 'Model has invalid index'});
+        return new Error({ error: 'Model has invalid index'});
       }
     });
+    if (newTable.Table.GlobalSecondaryIndexes.length < 1) {
+      delete (newTable.Table.GlobalSecondaryIndexes);
+    }
     return this.createTable(newTable.Table);
   }
 
   /**
-    * Deletes a table explicitly
-    */
+   * Deterministic method to call create table using the model as the reference
+   * @memberof dynamo
+   * @params {HASHNAME: VALUE}
+   * @returns {Object} promise - {}
+   */
   deleteTable(params) {
     return new Promise((resolve, reject) => {
       this.ddb.deleteTable(params, (err, res) => {
@@ -133,14 +165,13 @@ export default class {
 
 
   /**
-    * Performs a full scan
-    */
+   * Performs a full unfiltered scan
+   * @memberof dynamo
+   * @returns {Object} promise - array of items
+   */
   scan() {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
       this.ddb.scan({'TableName': table}, (err, res) => {
         if (err) {
           reject(err);
@@ -152,11 +183,14 @@ export default class {
   }
 
   /**
-    * Gets a list of the tables
-    */
+   * Gets a list of available tables
+   * @memberof dynamo
+   * @returns {Object} promise - Array of tables
+   */
   list() {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, res) => {
+        /* istanbul ignore if */
         if (err) {
           reject(err);
         } else {
@@ -167,44 +201,47 @@ export default class {
   }
 
   /**
-    * Performs a deterministic read
-    */
+   * Deterministic method to read a value from an object.
+   * Will use the model as a reference to construct the proper query
+   * @memberof dynamo
+   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+   * @returns {Object} promise
+   */
   read(obj) {
-    const key = Object.keys(obj)[0];
-    let itemPromise = null;
-    let type = null;
+    return new Promise((resolve, reject) => {
+      const key = Object.keys(obj)[0];
+      let itemPromise = null;
+      let type = null;
 
-    _.each(this.schemas['1'].indexes, function(row) {
-      if (row.value === key) {
-        type = row.keytype;
-        return false;
-      }
-    });
+      _.each(this.schemas['1'].indexes, function(row) {
+        if (row.value === key) {
+          type = row.keytype;
+          return false;
+        }
+      });
 
-    if (!type) {
-      itemPromise = {error: 'No type'};
-    } else {
-      if (type === 'hash') {
-        itemPromise = this.getItemByHash(obj);
+      if (!type) {
+        reject(new Error('No type'));
       } else {
-        itemPromise = this.getItemById(obj);
+        if (type === 'hash') {
+          itemPromise = this.getItemByHash(obj);
+        } else {
+          itemPromise = this.getItemById(obj);
+        }
       }
-    }
-    return itemPromise;
+      resolve(itemPromise);
+    });
   }
 
   /**
    * Reads from the database by secondary index
    * @memberof dynamo
-   * @param {Object} query Specific id or query to construct read
+   * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
    * @returns {Object} promise
    */
   getItemById(obj) {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
       const key = Object.keys(obj)[0];
       const params = {
         TableName: table,
@@ -219,7 +256,7 @@ export default class {
         if (err) {
           reject(err);
         } else {
-          resolve(data);
+          resolve(this.sanitize(data));
         }
       });
     });
@@ -229,22 +266,19 @@ export default class {
     * Returns a list of objects in an array
     * Searched by the hashObject
     * Example: getItemsInArray('id',[1,2,3,4])
+    * @memberof dynamo
+    * @params {HASHNAME/SECONDARYINDEX NAME: VALUE}
+    * @returns {Object} promise
     */
   getItemsInArray(hash, array) {
     return new Promise((resolve, reject) => {
       if (!array) {
-        reject('Array empty');
-        return false;
+        reject(new Error('Array empty'));
       }
       if (array.length < 1) {
-        reject('Array contained no values');
-        return false;
+        reject(new Error('Array contained no values'));
       }
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
-
       let params = {
         RequestItems: {}
       };
@@ -261,9 +295,14 @@ export default class {
 
       this.ddb.batchGetItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          reject(new Error(err));
         } else {
-          resolve(data);
+          let returnArray = [];
+          const sanitize = this.sanitize;
+          _.each(data, function(row) {
+            returnArray.push(sanitize(row));
+          });
+          resolve(returnArray);
         }
       });
     });
@@ -279,9 +318,6 @@ export default class {
   getItemByHash(obj) {
     return new Promise((resolve, reject) => {
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
       const key = Object.keys(obj)[0];
       let params = {
         TableName: table,
@@ -290,9 +326,9 @@ export default class {
       params.Key[key] = obj[key];
       this.ddb.getItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          reject(new Error(err));
         } else {
-          resolve(data);
+          resolve(this.sanitize(data));
         }
       });
     });
@@ -309,16 +345,13 @@ export default class {
   update(hashObject, updatedValuesArray) {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
-      const validationErrors = false;
-
+      const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
       if (validationErrors) {
-        reject(validationErrors);
+        reject(new Error(validationErrors));
       } else {
         const table = this.schemas['1'].tableName;
         const key = Object.keys(hashObject)[0];
-        if (!table) {
-          reject('No table defined');
-        }
+
         let params = {
           TableName: table,
           Key: {},
@@ -345,7 +378,7 @@ export default class {
         });
         this.ddb.updateItem(params, function(err, data) {
           if (err) {
-            reject(err);
+            reject(new Error(err));
           } else {
             resolve(data.Attributes);
           }
@@ -364,9 +397,7 @@ export default class {
     return new Promise((resolve, reject) => {
       const key = Object.keys(hashObject)[0];
       const table = this.schemas['1'].tableName;
-      if (!table) {
-        reject('No table defined');
-      }
+
       let params = {
         TableName: table,
         Key: {}
@@ -374,7 +405,7 @@ export default class {
       params.Key[key] = hashObject[key];
       this.ddb.deleteItem(params, (err, data) => {
         if (err) {
-          reject(err);
+          reject(new Error(err));
         } else {
           resolve(data);
         }
@@ -382,9 +413,12 @@ export default class {
     });
   }
 
-  /*
-   * Extends a method by name and call back
-   */
+  /**
+  * Extends the dynamo object
+  * @memberof dynamo
+  * @param {String} name The name of the method
+  * @param {Function} fn The function to extend on the object
+  */
   extend(name, fn) {
     this[name] = fn.bind(this);
   }

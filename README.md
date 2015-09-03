@@ -15,29 +15,172 @@ npm install modli-dynamodb --save
 
 ## Usage
 
+
 ```javascript
 import { model, adapter, Joi, use } from 'modli';
 import { dynamodb } from 'modli-dynamodb';
 
-// Create a model
-model.add({
-  name: 'testModel',
-  version: 1,
-  schema: {
-    /* ...schema properties... */
-  }
-});
+// Set your configuration
+let dynamoConfig = {
+  region: 'us-east-1',                // Your specific AWS Region
+  endpoint: 'http://localhost:8000',  // Optional value to specify an end point
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID || '123456789',
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '123456789'
+};
 
-// Add adapter using NeDB
-model.add({
-  name: 'testDynamo',
-  source: dynamodb
-  config: {
-    /*...*/
-  }
-});
+// Create an instance of the adapter
+const myTable = new DynamoAdapter(dynamoConfig);
 
-const testModli = use('testModel', 'testDynamo');
+// Set your model by the specified version
+myTable.setSchema('1', myModel);
+
+```
+## Methods
+
+### `setSchema`
+
+Sets the schema for the adapter to use as its in memory model. 
+
+```javascript
+dynamoAdapter.scan()
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `list`
+
+Gets a list of all active tables
+
+```javascript
+dynamoAdapter.list()
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `scan`
+
+Perform a full unfiltered scan of a table
+
+```javascript
+dynamoAdapter.scan()
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `createTable`
+
+Pass through method that uses explicit dynamo creation params to create a table
+
+```javascript
+dynamoAdapter.createTable(dynamoParams)
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `createTableFromModel`
+
+Performs a deterministic create based on the specified schema.  Will construct the creation query without additional input.
+
+```javascript
+dynamoAdapter.createTableFromModel()
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `deleteTable`
+
+Deletes a table by specified object containing hash / value pair
+
+```javascript
+dynamoAdapter.deleteTable({TableName: 'myTable'})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `create`
+
+Creates a new entry in the table specified in the schema
+
+```javascript
+dynamoAdapter.create({HASH:Value, SomeIndex: OtherValue})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `read`
+
+Performs a deterministic read on a table by hash / value pair OR secondary index / value pair
+
+```javascript
+dynamoAdapter.read({HASH: SomeValue})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+```javascript
+dynamoAdapter.read({SOMEINDEX: SomeOtherValue})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `getItemByHash`
+
+Performs a read on a table expecting a HASH / Value pair
+
+```javascript
+dynamoAdapter.getItemById({SOMEHASH: SomeValue})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `getItemById`
+
+Performs a read on a table expecting a global secondary index
+
+```javascript
+dynamoAdapter.getItemById({SOMEINDEX: SomeValue})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `getItemsInArray`
+
+Calls batchGetItem using a Hash identifier
+
+```javascript
+dynamoAdapter.getItemsInArray('HASHNAME', [1,2,3,4])
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `update`
+
+Updates a row in the table by HASH / Value pair and JSON Object specifying new values
+
+```javascript
+dynamoAdapter.update({HASH: 'SomeValue'}, {Name: 'New Name'})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `delete`
+
+Deletes a row from the table by HASH / Value pair
+
+```javascript
+dynamoAdapter.delete({HASH: 'SomeValue'})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `extend`
+
+Extends the adapter to allow custom methods
+
+```javascript
+dynamoAdapter.extend('methodName', () => {
+  /*...*/
+})
 ```
 
 ## Makefile and Scripts
