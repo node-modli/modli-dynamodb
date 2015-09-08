@@ -56,7 +56,7 @@ adapter.add({
 You can now use the adapter with the model with:
 
 ```javascript
-testDynamo = use('roles', 'dynamoAdapter');
+const testDynamo = use('roles', 'dynamoAdapter');
 ```
 
 ## Methods
