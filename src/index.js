@@ -256,12 +256,17 @@ export default class {
           ':hk_val': obj[key]
         }
       };
-
       this.ddb.query(params, (err, data) => {
+        let returnValue = null;
         if (err) {
           reject(err);
         } else {
-          resolve(this.sanitize(data));
+          const sanitize = this.sanitize;
+          returnValue = [];
+          _.each(data.Items, function(row) {
+            returnValue.push(sanitize(row));
+          });
+          resolve(returnValue);
         }
       });
     });

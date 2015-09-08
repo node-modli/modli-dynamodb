@@ -1,3 +1,5 @@
+import { Joi } from 'modli';
+
 // Mockup to represent numeric keys and multiple gsi
 export const numericAccount = {
   TableName: 'numusers',
@@ -83,6 +85,13 @@ export const testModel = {
   schema: {
     permissions: {}
   }
+};
+
+export const userSchema = {
+  id: Joi.string(),
+  password: Joi.string(),
+  firstName: Joi.string(),
+  lastName: Joi.string()
 };
 
 export const testNumericModel = {

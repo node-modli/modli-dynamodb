@@ -2,7 +2,8 @@
 /* global expect, request, describe, it, before, after */
 import '../setup';
 import DynamoAdapter from '../../src/index.js';
-import { testAccount1, testAccount2, testModel, testNumericModel, badModel, nogsiModel, numericAccount} from './test-data';
+import { testAccount1, testAccount2, testModel, testNumericModel, badModel, nogsiModel, numericAccount, userSchema} from './test-data';
+import { model, adapter, use } from 'modli';
 
 let dynamoConfig = {
   region: 'us-east-1',
@@ -53,6 +54,41 @@ numeric.sanitize = sanitize;
 standard.sanitize = sanitize;
 failAdapter.sanitize = sanitize;
 nogsiAdapter.sanitize = sanitize;
+
+describe('Verifies integration with modli', () => {
+  let newModel;
+
+  it('Adds a model to modli object', (done) => {
+    model.add({
+      name: 'roles',
+      version: 1,
+      schema: userSchema
+    });
+    expect(testModel.schemas).to.be.an.object;
+    expect(testModel.validate).to.be.a.function;
+    expect(testModel.sanitize).to.be.a.function;
+    done();
+  });
+
+  it('Adds instance of the adapter', (done) => {
+    adapter.add({
+      name: 'dynamoAdapter',
+      source: DynamoAdapter,
+      config: dynamoConfig
+    });
+    const actualConfig = adapter.store.dynamoAdapter.config;
+    // Ensure creation
+    expect(actualConfig).to.deep.equal(dynamoConfig);
+    done();
+  });
+
+  it('returns an instance based on a model and adapter', () => {
+    newModel = use('roles', 'dynamoAdapter');
+    expect(newModel.schemas).to.be.an.object;
+    expect(newModel.validate).to.be.a.function;
+    expect(newModel.sanitize).to.be.a.function;
+  });
+});
 
 describe('dynamo numeric tests', () => {
   describe('get schema', () => {
