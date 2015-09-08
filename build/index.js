@@ -316,12 +316,19 @@ var _default = (function () {
             ':hk_val': obj[key]
           }
         };
-
         _this8.ddb.query(params, function (err, data) {
+          var returnValue = null;
           if (err) {
             reject(err);
           } else {
-            resolve(_this8.sanitize(data));
+            (function () {
+              var sanitize = _this8.sanitize;
+              returnValue = [];
+              _.each(data.Items, function (row) {
+                returnValue.push(sanitize(row));
+              });
+              resolve(returnValue);
+            })();
           }
         });
       });

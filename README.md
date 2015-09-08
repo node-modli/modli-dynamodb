@@ -15,7 +15,7 @@ npm install modli-dynamodb --save
 
 ## Usage
 
-
+Configure your adapter and model
 ```javascript
 import { model, adapter, Joi, use } from 'modli';
 import dynamodb from 'modli-dynamodb';
@@ -27,14 +27,38 @@ let dynamoConfig = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID || '123456789',
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '123456789'
 };
-
-// Create an instance of the adapter
-const myTable = new DynamoAdapter(dynamoConfig);
-
-// Set your model by the specified version
-myTable.setSchema('1', myModel);
-
 ```
+
+Add an instance of the model
+
+```javascript
+model.add({
+  name: 'roles',
+  version: 1, 
+  schema: {
+    id: Joi.string(),
+    name: Joi.string(),
+    age: Joi.number()
+  }
+});
+```
+
+Add the adapter with the previously defined config object structure:
+
+```javascript
+adapter.add({
+  name: 'dynamoAdapter',
+  source: DynamoAdapter,
+  config: dynamoConfig
+});
+```
+
+You can now use the adapter with the model with:
+
+```javascript
+newModel = use('roles', 'dynamoAdapter');
+```
+
 ## Methods
 
 ### `setSchema`
