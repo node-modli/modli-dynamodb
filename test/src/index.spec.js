@@ -49,7 +49,6 @@ standard.validate = validate;
 failAdapter.validate = validate;
 nogsiAdapter.validate = validate;
 
-
 numeric.sanitize = sanitize;
 standard.sanitize = sanitize;
 failAdapter.sanitize = sanitize;

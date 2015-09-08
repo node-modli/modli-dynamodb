@@ -56,27 +56,17 @@ adapter.add({
 You can now use the adapter with the model with:
 
 ```javascript
-newModel = use('roles', 'dynamoAdapter');
+const testDynamo = use('roles', 'dynamoAdapter');
 ```
 
 ## Methods
-
-### `setSchema`
-
-Sets the schema for the adapter to use as its in memory model. 
-
-```javascript
-dynamoAdapter.scan()
-  .then(/*...*/)
-  .catch(/*...*/);
-```
 
 ### `list`
 
 Gets a list of all active tables
 
 ```javascript
-dynamoAdapter.list()
+testDynamo.list()
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -86,7 +76,7 @@ dynamoAdapter.list()
 Perform a full unfiltered scan of a table
 
 ```javascript
-dynamoAdapter.scan()
+testDynamo.scan()
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -96,7 +86,7 @@ dynamoAdapter.scan()
 Pass through method that uses explicit dynamo creation params to create a table
 
 ```javascript
-dynamoAdapter.createTable(dynamoParams)
+testDynamo.createTable(dynamoParams)
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -106,7 +96,7 @@ dynamoAdapter.createTable(dynamoParams)
 Performs a deterministic create based on the specified schema.  Will construct the creation query without additional input.
 
 ```javascript
-dynamoAdapter.createTableFromModel()
+testDynamo.createTableFromModel()
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -116,7 +106,7 @@ dynamoAdapter.createTableFromModel()
 Deletes a table by specified object containing hash / value pair
 
 ```javascript
-dynamoAdapter.deleteTable({TableName: 'myTable'})
+testDynamo.deleteTable({TableName: 'myTable'})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -126,7 +116,7 @@ dynamoAdapter.deleteTable({TableName: 'myTable'})
 Creates a new entry in the table specified in the schema
 
 ```javascript
-dynamoAdapter.create({HASH:Value, SomeIndex: OtherValue})
+testDynamo.create({HASH:Value, SomeIndex: OtherValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -136,13 +126,13 @@ dynamoAdapter.create({HASH:Value, SomeIndex: OtherValue})
 Performs a deterministic read on a table by hash / value pair OR secondary index / value pair
 
 ```javascript
-dynamoAdapter.read({HASH: SomeValue})
+testDynamo.read({HASH: SomeValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
 
 ```javascript
-dynamoAdapter.read({SOMEINDEX: SomeOtherValue})
+testDynamo.read({SOMEINDEX: SomeOtherValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -152,7 +142,7 @@ dynamoAdapter.read({SOMEINDEX: SomeOtherValue})
 Performs a read on a table expecting a HASH / Value pair
 
 ```javascript
-dynamoAdapter.getItemById({SOMEHASH: SomeValue})
+testDynamo.getItemById({SOMEHASH: SomeValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -162,7 +152,7 @@ dynamoAdapter.getItemById({SOMEHASH: SomeValue})
 Performs a read on a table expecting a global secondary index
 
 ```javascript
-dynamoAdapter.getItemById({SOMEINDEX: SomeValue})
+testDynamo.getItemById({SOMEINDEX: SomeValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -172,7 +162,7 @@ dynamoAdapter.getItemById({SOMEINDEX: SomeValue})
 Calls batchGetItem using a Hash identifier
 
 ```javascript
-dynamoAdapter.getItemsInArray('HASHNAME', [1,2,3,4])
+testDynamo.getItemsInArray('HASHNAME', [1,2,3,4])
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -182,7 +172,7 @@ dynamoAdapter.getItemsInArray('HASHNAME', [1,2,3,4])
 Updates a row in the table by HASH / Value pair and JSON Object specifying new values
 
 ```javascript
-dynamoAdapter.update({HASH: 'SomeValue'}, {Name: 'New Name'})
+testDynamo.update({HASH: 'SomeValue'}, {Name: 'New Name'})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -192,7 +182,7 @@ dynamoAdapter.update({HASH: 'SomeValue'}, {Name: 'New Name'})
 Deletes a row from the table by HASH / Value pair
 
 ```javascript
-dynamoAdapter.delete({HASH: 'SomeValue'})
+testDynamo.delete({HASH: 'SomeValue'})
   .then(/*...*/)
   .catch(/*...*/);
 ```
@@ -202,7 +192,7 @@ dynamoAdapter.delete({HASH: 'SomeValue'})
 Extends the adapter to allow custom methods
 
 ```javascript
-dynamoAdapter.extend('methodName', () => {
+testDynamo.extend('methodName', () => {
   /*...*/
 })
 ```
