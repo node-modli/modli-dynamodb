@@ -21,7 +21,8 @@ export default class {
    * @param {String} version The version of the model
    * @param {Object} schema Json Object with schema information
    */
-  setSchema(schema, version = false) {
+  setSchema(schema, version) {
+    this.defaultVersion = version;
     this.schemas[version] = schema;
   }
 
@@ -80,24 +81,24 @@ export default class {
    * @param {Object} body Contents to create entry
    * @returns {Object} promise
    */
-  create(body, version) {
+  create(body, paramVersion = false) {
     return new Promise((resolve, reject) => {
       try {
-        const createParams = {
-          TableName: this.schemas['1'].tableName,
-          ReturnValues: 'ALL_OLD',
-          Item: body
-        };
-        const validationErrors = this.validate(createParams, version);
-
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const validationErrors = this.validate(body, version);
         if (validationErrors) {
-          throw new Error(validationErrors);
+          throw new Error('Modli Errors: ' + validationErrors);
         } else {
-          this.ddb.putItem(createParams, function(err, data) {
+          const createParams = {
+            TableName: this.schemas[version].tableName,
+            ReturnValues: 'ALL_OLD',
+            Item: body
+          };
+          this.ddb.putItem(createParams, function(err) {
             if (err) {
               reject(err);
             } else {
-              resolve(data);
+              resolve(body);
             }
           });
         }
@@ -115,11 +116,17 @@ export default class {
    */
   createTable(params) {
     return new Promise((resolve, reject) => {
-      this.ddb.createTable(params, (err, res) => {
-        if (err) {
-          reject(err);
+      this.ddb.listTables({}, (err, foundTables) => {
+        if (_.contains(foundTables.TableNames, params.TableName)) {
+          resolve({TableName: params.TableName, existed: true});
         } else {
-          resolve(res);
+          this.ddb.createTable(params, (createErr, res) => {
+            if (createErr) {
+              reject(createErr);
+            } else {
+              resolve(res);
+            }
+          });
         }
       });
     });
@@ -130,10 +137,11 @@ export default class {
    * @memberof dynamodb
    * @returns {Object} promise
    */
-  createTableFromModel() {
+  createTableFromModel(paramVersion = false) {
+    const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
     let newTable = _.clone(tables.table, true);
-    newTable.Table.TableName = this.schemas['1'].tableName;
-    _.each(this.schemas['1'].indexes, (row) => {
+    newTable.Table.TableName = this.schemas[version].tableName;
+    _.each(this.schemas[version].indexes, (row) => {
       newTable.Table.AttributeDefinitions.push(this.generateDefinition(row));
       if (row.keytype === 'hash') {
         newTable.Table.KeySchema.push(this.generateKey(row));
@@ -173,9 +181,10 @@ export default class {
    * @memberof dynamodb
    * @returns {Object} promise
    */
-  scan() {
+  scan(paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const table = this.schemas['1'].tableName;
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+      const table = this.schemas[version].tableName;
       this.ddb.scan({'TableName': table}, (err, res) => {
         if (err) {
           reject(err);
@@ -211,13 +220,14 @@ export default class {
    *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
-  read(obj) {
+  read(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       const key = Object.keys(obj)[0];
       let itemPromise = null;
       let type = null;
 
-      _.each(this.schemas['1'].indexes, function(row) {
+      _.each(this.schemas[version].indexes, function(row) {
         if (row.value === key) {
           type = row.keytype;
           return false;
@@ -228,9 +238,9 @@ export default class {
         reject(new Error('No type'));
       } else {
         if (type === 'hash') {
-          itemPromise = this.getItemByHash(obj);
+          itemPromise = this.getItemByHash(obj, version);
         } else {
-          itemPromise = this.getItemById(obj);
+          itemPromise = this.getItemById(obj, version);
         }
       }
       resolve(itemPromise);
@@ -244,9 +254,10 @@ export default class {
    *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
-  getItemById(obj) {
+  getItemById(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const table = this.schemas['1'].tableName;
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+      const table = this.schemas[version].tableName;
       const key = Object.keys(obj)[0];
       const params = {
         TableName: table,
@@ -279,15 +290,16 @@ export default class {
     * @param {Array} array Array of values to search in
     * @returns {Object} promise
     */
-  getItemsInArray(hash, array) {
+  getItemsInArray(hash, array, paramVersion = false) {
     return new Promise((resolve, reject) => {
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       if (!array) {
         reject(new Error('Array empty'));
       }
       if (array.length < 1) {
         reject(new Error('Array contained no values'));
       }
-      const table = this.schemas['1'].tableName;
+      const table = this.schemas[version].tableName;
       let params = {
         RequestItems: {}
       };
@@ -324,9 +336,10 @@ export default class {
    *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
-  getItemByHash(obj) {
+  getItemByHash(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const table = this.schemas['1'].tableName;
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+      const table = this.schemas[version].tableName;
       const key = Object.keys(obj)[0];
       let params = {
         TableName: table,
@@ -352,14 +365,15 @@ export default class {
    * @param {Object} updatedValuesArray An array of values to update on the found row
    * @returns {Object} promise
    */
-  update(hashObject, updatedValuesArray) {
+  update(hashObject, updatedValuesArray, paramVersion = false) {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
       if (validationErrors) {
         reject(new Error(validationErrors));
       } else {
-        const table = this.schemas['1'].tableName;
+        const table = this.schemas[version].tableName;
         const key = Object.keys(hashObject)[0];
 
         let params = {
@@ -404,10 +418,11 @@ export default class {
    *   @property {string} hash/index - Example { authId: '1234'}
    * @returns {Object} promise
    */
-  delete(hashObject) {
+  delete(hashObject, paramVersion = false) {
     return new Promise((resolve, reject) => {
+      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       const key = Object.keys(hashObject)[0];
-      const table = this.schemas['1'].tableName;
+      const table = this.schemas[version].tableName;
 
       let params = {
         TableName: table,

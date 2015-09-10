@@ -104,6 +104,13 @@ describe('dynamo numeric tests', () => {
         done();
       });
     });
+
+    it('tests success from recreating test table again', (done) => {
+      numeric.createTableFromModel().then((data) => {
+        expect(data.existed).to.equal(true);
+        done();
+      });
+    });
   });
 
   describe('create', () => {
