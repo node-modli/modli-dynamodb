@@ -3,4 +3,5 @@ languages:
 exclude_paths:
   - "examples/**/*"
   - "build/**/*"
+  - "build/index.js"
   - "src/dynamo-data.js"
