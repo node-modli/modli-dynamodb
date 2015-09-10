@@ -434,7 +434,7 @@ var _default = (function () {
           if (err) {
             reject(new Error(err));
           } else {
-            resolve(_this10.sanitize(data));
+            resolve(_this10.sanitize(data.Item));
           }
         });
       });

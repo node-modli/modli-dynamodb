@@ -350,7 +350,7 @@ export default class {
         if (err) {
           reject(new Error(err));
         } else {
-          resolve(this.sanitize(data));
+          resolve(this.sanitize(data.Item));
         }
       });
     });
