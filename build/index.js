@@ -39,9 +39,8 @@ var _default = (function () {
 
   _createClass(_default, [{
     key: 'setSchema',
-    value: function setSchema(schema) {
-      var version = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
+    value: function setSchema(schema, version) {
+      this.defaultVersion = version;
       this.schemas[version] = schema;
     }
 
@@ -110,26 +109,28 @@ var _default = (function () {
      */
   }, {
     key: 'create',
-    value: function create(body, version) {
+    value: function create(body) {
       var _this = this;
+
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
         try {
-          var createParams = {
-            TableName: _this.schemas['1'].tableName,
-            ReturnValues: 'ALL_OLD',
-            Item: body
-          };
-          var validationErrors = _this.validate(createParams, version);
-
+          var version = paramVersion === false ? _this.defaultVersion : paramVersion;
+          var validationErrors = _this.validate(body, version);
           if (validationErrors) {
-            throw new Error(validationErrors);
+            throw new Error('Modli Errors: ' + validationErrors);
           } else {
-            _this.ddb.putItem(createParams, function (err, data) {
+            var createParams = {
+              TableName: _this.schemas[version].tableName,
+              ReturnValues: 'ALL_OLD',
+              Item: body
+            };
+            _this.ddb.putItem(createParams, function (err) {
               if (err) {
                 reject(err);
               } else {
-                resolve(data);
+                resolve(body);
               }
             });
           }
@@ -151,11 +152,17 @@ var _default = (function () {
       var _this2 = this;
 
       return new Promise(function (resolve, reject) {
-        _this2.ddb.createTable(params, function (err, res) {
-          if (err) {
-            reject(err);
+        _this2.ddb.listTables({}, function (err, foundTables) {
+          if (_.contains(foundTables.TableNames, params.TableName)) {
+            resolve({ TableName: params.TableName, existed: true });
           } else {
-            resolve(res);
+            _this2.ddb.createTable(params, function (createErr, res) {
+              if (createErr) {
+                reject(createErr);
+              } else {
+                resolve(res);
+              }
+            });
           }
         });
       });
@@ -171,9 +178,12 @@ var _default = (function () {
     value: function createTableFromModel() {
       var _this3 = this;
 
+      var paramVersion = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+
+      var version = paramVersion === false ? this.defaultVersion : paramVersion;
       var newTable = _.clone(_dynamoData.tables.table, true);
-      newTable.Table.TableName = this.schemas['1'].tableName;
-      _.each(this.schemas['1'].indexes, function (row) {
+      newTable.Table.TableName = this.schemas[version].tableName;
+      _.each(this.schemas[version].indexes, function (row) {
         newTable.Table.AttributeDefinitions.push(_this3.generateDefinition(row));
         if (row.keytype === 'hash') {
           newTable.Table.KeySchema.push(_this3.generateKey(row));
@@ -222,8 +232,11 @@ var _default = (function () {
     value: function scan() {
       var _this5 = this;
 
+      var paramVersion = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+
       return new Promise(function (resolve, reject) {
-        var table = _this5.schemas['1'].tableName;
+        var version = paramVersion === false ? _this5.defaultVersion : paramVersion;
+        var table = _this5.schemas[version].tableName;
         _this5.ddb.scan({ 'TableName': table }, function (err, res) {
           if (err) {
             reject(err);
@@ -268,12 +281,15 @@ var _default = (function () {
     value: function read(obj) {
       var _this7 = this;
 
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
       return new Promise(function (resolve, reject) {
+        var version = paramVersion === false ? _this7.defaultVersion : paramVersion;
         var key = Object.keys(obj)[0];
         var itemPromise = null;
         var type = null;
 
-        _.each(_this7.schemas['1'].indexes, function (row) {
+        _.each(_this7.schemas[version].indexes, function (row) {
           if (row.value === key) {
             type = row.keytype;
             return false;
@@ -284,9 +300,9 @@ var _default = (function () {
           reject(new Error('No type'));
         } else {
           if (type === 'hash') {
-            itemPromise = _this7.getItemByHash(obj);
+            itemPromise = _this7.getItemByHash(obj, version);
           } else {
-            itemPromise = _this7.getItemById(obj);
+            itemPromise = _this7.getItemById(obj, version);
           }
         }
         resolve(itemPromise);
@@ -305,8 +321,11 @@ var _default = (function () {
     value: function getItemById(obj) {
       var _this8 = this;
 
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
       return new Promise(function (resolve, reject) {
-        var table = _this8.schemas['1'].tableName;
+        var version = paramVersion === false ? _this8.defaultVersion : paramVersion;
+        var table = _this8.schemas[version].tableName;
         var key = Object.keys(obj)[0];
         var params = {
           TableName: table,
@@ -346,14 +365,17 @@ var _default = (function () {
     value: function getItemsInArray(hash, array) {
       var _this9 = this;
 
+      var paramVersion = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+
       return new Promise(function (resolve, reject) {
+        var version = paramVersion === false ? _this9.defaultVersion : paramVersion;
         if (!array) {
           reject(new Error('Array empty'));
         }
         if (array.length < 1) {
           reject(new Error('Array contained no values'));
         }
-        var table = _this9.schemas['1'].tableName;
+        var table = _this9.schemas[version].tableName;
         var params = {
           RequestItems: {}
         };
@@ -397,8 +419,11 @@ var _default = (function () {
     value: function getItemByHash(obj) {
       var _this10 = this;
 
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
       return new Promise(function (resolve, reject) {
-        var table = _this10.schemas['1'].tableName;
+        var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
+        var table = _this10.schemas[version].tableName;
         var key = Object.keys(obj)[0];
         var params = {
           TableName: table,
@@ -428,14 +453,17 @@ var _default = (function () {
     value: function update(hashObject, updatedValuesArray) {
       var _this11 = this;
 
+      var paramVersion = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
+
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
+        var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
         var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
         if (validationErrors) {
           reject(new Error(validationErrors));
         } else {
           (function () {
-            var table = _this11.schemas['1'].tableName;
+            var table = _this11.schemas[version].tableName;
             var key = Object.keys(hashObject)[0];
 
             var params = {
@@ -484,9 +512,12 @@ var _default = (function () {
     value: function _delete(hashObject) {
       var _this12 = this;
 
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
       return new Promise(function (resolve, reject) {
+        var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
         var key = Object.keys(hashObject)[0];
-        var table = _this12.schemas['1'].tableName;
+        var table = _this12.schemas[version].tableName;
 
         var params = {
           TableName: table,
