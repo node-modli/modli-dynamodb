@@ -4,3 +4,4 @@ exclude_paths:
   - "examples/**/*"
   - "build/**/*"
   - "src/dynamo-data.js"
+- "build/index.js"
