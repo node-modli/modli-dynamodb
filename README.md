@@ -73,16 +73,26 @@ testDynamo.list()
 
 ### `scan`
 
-Perform a full unfiltered scan of a table with an optional filter.
-  # Filters run scan-level with dynamo and are constructed in a way that correlates to dynamo filter conditionals
-  # Examples:
-    standard.scan('email = me@email.com').then(/*...*/).catch(/*...*/)
-    standard.scan('clients contains ClientABC').then(/*...*/).catch(/*...*/)
-    standard.scan('name in Ben,John').then(/*...*/).catch(/*...*/)
-    standard.scan('age between 18 22').then(/*...*/).catch(/*...*/)
+Perform a full unfiltered scan of a table with an optional dynamo scan-level filter that doesn't rely on secondary indexes.  Optional filters are constructed in a way that correlates to dynamo filter conditionals
 
 ```javascript
-testDynamo.scan(optionalFilter)
+testDynamo.scan()
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan('email = me@email.com')
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan('clients contains ClientABC')
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan('name in Ben,John')
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan('age between 18 22')
   .then(/*...*/)
   .catch(/*...*/);
 ```
