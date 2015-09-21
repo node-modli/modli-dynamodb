@@ -73,10 +73,16 @@ testDynamo.list()
 
 ### `scan`
 
-Perform a full unfiltered scan of a table
+Perform a full unfiltered scan of a table with an optional filter.
+  # Filters run scan-level with dynamo and are constructed in a way that correlates to dynamo filter conditionals
+  # Examples:
+    standard.scan('email = me@email.com').then(/*...*/).catch(/*...*/)
+    standard.scan('clients contains ClientABC').then(/*...*/).catch(/*...*/)
+    standard.scan('name in Ben,John').then(/*...*/).catch(/*...*/)
+    standard.scan('age between 18 22').then(/*...*/).catch(/*...*/)
 
 ```javascript
-testDynamo.scan()
+testDynamo.scan(optionalFilter)
   .then(/*...*/)
   .catch(/*...*/);
 ```
