@@ -401,7 +401,7 @@ describe('standard model', () => {
       });
     });
   });
-  
+
   describe('delete', () => {
     it('deletes first account', (done) => {
       standard.delete({id: testAccount1.Item.id}).then((data) => {
