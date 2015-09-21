@@ -17,6 +17,16 @@ tables.table = {
   }
 };
 
+tables.filterExpression = {
+  'FilterExpression': '', // contains( #roles, :val1)',
+  'ExpressionAttributeNames': {
+      // '#roles': 'roles'
+  },
+  'ExpressionAttributeValues': {
+      // ':val1': 'eng_user'
+  }
+};
+
 tables.attribute = {
   'AttributeName': 'authId',
   'AttributeType': 'S'

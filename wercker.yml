@@ -38,3 +38,7 @@ build:
         code: |
           npm install -g codeclimate-test-reporter
           codeclimate-test-reporter < coverage/lcov.info
+    - slack-notifier:
+        url: https://hooks.slack.com/services/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
+        channel: hubbuilds
+        username: wercker

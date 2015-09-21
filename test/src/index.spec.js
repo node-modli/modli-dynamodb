@@ -287,16 +287,14 @@ describe('standard model', () => {
     });
   });
 
-  describe('create', () => {
+  describe('create accounts', () => {
     it('Creates first entry', (done) => {
       standard.create(testAccount1.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
-  });
 
-  describe('create', () => {
     it('Creates second entry', (done) => {
       standard.create(testAccount2.Item, '1').then((data) => {
         expect(data).to.be.an.object;
@@ -305,10 +303,45 @@ describe('standard model', () => {
     });
   });
 
-  describe('scan', () => {
-    it('scans dynamo user table', (done) => {
+  describe('scan tests', () => {
+    it('performs a generic scan', (done) => {
       standard.scan().then((data) => {
         expect(data.length).to.be.above(0);
+        done();
+      });
+    });
+
+    it('scans dynamo with EQ', (done) => {
+      standard.scan('email = ben@ben.com').then((data) => {
+        expect(data.length).to.be.above(1);
+        done();
+      }).catch(done);
+    });
+
+    it('scans dynamo with contains', (done) => {
+      standard.scan('roles contains eng_user').then((data) => {
+        expect(data.length).to.be.above(0);
+        done();
+      }).catch(done);
+    });
+
+    it('scans dynamo with in', (done) => {
+      standard.scan('firstName in Ben,Benji').then((data) => {
+        expect(data.length).to.be.above(0);
+        done();
+      }).catch(done);
+    });
+
+    it('scans dynamo with between', (done) => {
+      standard.scan('age between 18 22').then((data) => {
+        expect(data.length).to.be.equal(1);
+        done();
+      }).catch(done);
+    });
+
+    it('fails the scan', (done) => {
+      numeric.scan('age trashes 18').then(done).catch((err) => {
+        expect(err).to.be.an.instanceof(Error);
         done();
       });
     });
@@ -368,7 +401,7 @@ describe('standard model', () => {
       });
     });
   });
-
+  
   describe('delete', () => {
     it('deletes first account', (done) => {
       standard.delete({id: testAccount1.Item.id}).then((data) => {

@@ -22,6 +22,7 @@ export const testAccount1 = {
   TableName: 'tmpusers',
   Item: {
     'id': 'ben1',
+    'age': 25,
     'authId': 'benauth',
     'lastName': 'McCallister',
     'email': 'ben@ben.com',
@@ -50,11 +51,12 @@ export const testAccount2 = {
   TableName: 'tmpusers',
   Item: {
     'id': 'ben2',
+    'age': 20,
     'authId': 'benauth',
     'lastName': 'McCallister',
     'email': 'ben@ben.com',
     'roles': [
-      'qa_user'
+      'eng_user'
     ],
     'permissions': {
       'leadhub': {
@@ -67,7 +69,7 @@ export const testAccount2 = {
         }
       }
     },
-    'firstName': 'Ben'
+    'firstName': 'Benji'
   },
   ReturnValues: 'ALL_OLD', // optional (NONE | ALL_OLD)
   ReturnConsumedCapacity: 'NONE', // optional (NONE | TOTAL | INDEXES)
