@@ -312,35 +312,44 @@ describe('standard model', () => {
     });
 
     it('scans dynamo with EQ', (done) => {
-      standard.scan('email = ben@ben.com').then((data) => {
-        expect(data.length).to.be.above(1);
+      standard.scan({email: {eq: 'ben@ben.com'}}).then((data) => {
+        expect(data.length).to.be.above(0);
         done();
       }).catch(done);
     });
 
+
     it('scans dynamo with contains', (done) => {
-      standard.scan('roles contains eng_user').then((data) => {
+      standard.scan({roles: {contains: 'qa_user'}}).then((data) => {
         expect(data.length).to.be.above(0);
         done();
       }).catch(done);
     });
 
     it('scans dynamo with in', (done) => {
-      standard.scan('firstName in Ben,Benji').then((data) => {
+      standard.scan({firstName: { in: ['Ben', 'Benji']}}).then((data) => {
         expect(data.length).to.be.above(0);
         done();
       }).catch(done);
     });
 
+
     it('scans dynamo with between', (done) => {
-      standard.scan('age between 18 22').then((data) => {
-        expect(data.length).to.be.equal(1);
+      standard.scan({age: { between: [18, 26]}}).then((data) => {
+        expect(data.length).to.be.above(0);
+        done();
+      }).catch(done);
+    });
+
+    it('scans dynamo with multiple expression filter', (done) => {
+      standard.scan({roles: {contains: 'qa_user'}, email: {eq: 'ben@ben.com'}}).then((data) => {
+        expect(data.length).to.be.above(0);
         done();
       }).catch(done);
     });
 
     it('fails the scan', (done) => {
-      numeric.scan('age trashes 18').then(done).catch((err) => {
+      numeric.scan({age: {trashes: 18}}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
         done();
       });

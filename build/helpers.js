@@ -12,7 +12,7 @@ var helpers = {};
 exports.helpers = helpers;
 var expressions = ['between', 'in'];
 
-var comparators = ['=', '<>', '<=', '>', '>='];
+var comparators = [{ 'eq': '=' }, { 'gt': '>' }, { 'lt': '<' }, { 'lte': '<=' }, { 'gte': '>=' }];
 
 var functions = ['attribute_type', 'begins_with', 'contains'];
 
@@ -21,20 +21,27 @@ helpers.isExpression = function (str) {
 };
 
 helpers.isComparator = function (str) {
-  return _.includes(comparators, str);
+  for (var i = 0; i < comparators.length; i++) {
+    var key = Object.keys(comparators[i])[0];
+    if (Object.keys(comparators[i])[0] === str) {
+      return comparators[i][key];
+    }
+  }
+  return false;
 };
 
 helpers.isFunction = function (str) {
   return _.includes(functions, str);
 };
 
-helpers.handleExpressionOperator = function (arr, str, newIndex) {
+helpers.handleExpressionOperator = function (filterObj, operator, key, keyValue, newIndex) {
+  var filterRow = filterObj[Object.keys(filterObj)[newIndex - 1]];
   var newFilter = Object.create({});
   newFilter = _.clone(_dynamoData.tables.filterExpression, true);
-  if (arr[1] === 'in') {
+  var inArr = filterRow[operator];
+  if (operator === 'in') {
     (function () {
-      var inArr = arr[2].split(',');
-      newFilter.FilterExpression = '#attr1 ' + arr[1] + '( ';
+      newFilter.FilterExpression = '#attr1 ' + operator + '( ';
       var iter = 1;
       _.each(inArr, function (row) {
         if (iter > 1) {
@@ -42,39 +49,51 @@ helpers.handleExpressionOperator = function (arr, str, newIndex) {
         }
         newFilter.FilterExpression += ':val' + newIndex + '_' + iter;
         newFilter.ExpressionAttributeValues[':val' + newIndex + '_' + iter] = row;
-
         iter++;
       });
-      newFilter.ExpressionAttributeNames['#attr' + newIndex] = arr[0];
+      newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
       newFilter.FilterExpression += ')';
     })();
   }
-  if (arr[1] === 'between') {
-    newFilter.FilterExpression = '#attr1 ' + arr[1] + ' :val' + newIndex + ' and :val' + newIndex + '_1';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = arr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = parseFloat(arr[2]);
-    newFilter.ExpressionAttributeValues[':val' + newIndex + '_1'] = parseFloat(arr[3]);
+  if (operator === 'between') {
+    newFilter.FilterExpression = '#attr' + newIndex + ' ' + operator + ' :val' + newIndex + ' and :val' + newIndex + '_1';
+    newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+    newFilter.ExpressionAttributeValues[':val' + newIndex] = inArr[0];
+    newFilter.ExpressionAttributeValues[':val' + newIndex + '_1'] = inArr[1];
   }
   return newFilter;
 };
 
-helpers.createExpression = function (currentFilter, newfilterString, index) {
-  var newIndex = index || 1;
+helpers.createExpression = function (currentFilter, filterObj) {
+  var newIndex = 1;
   var newFilter = Object.create({});
   newFilter = _.clone(_dynamoData.tables.filterExpression, true);
-  var filterArr = newfilterString.split(' ');
-  if (helpers.isFunction(filterArr[1])) {
-    newFilter.FilterExpression = filterArr[1] + '(#attr1, :val1)';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = filterArr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = filterArr[2];
-  } else if (helpers.isComparator(filterArr[1])) {
-    newFilter.FilterExpression = '#attr1 ' + filterArr[1] + ' :val1';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = filterArr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = filterArr[2];
-  } else if (helpers.isExpression(filterArr[1])) {
-    newFilter = helpers.handleExpressionOperator(filterArr, newfilterString, newIndex);
-  } else {
-    newFilter = { error: 'No specified operator applied for filter' };
-  }
+  newFilter.FilterExpression = '';
+  _.each(Object.keys(filterObj), function (key) {
+    var operator = Object.keys(filterObj[key])[0];
+    var comparator = helpers.isComparator(operator);
+    var keyValue = filterObj[key][operator];
+
+    if (newIndex > 1) {
+      newFilter.FilterExpression += ' and ';
+    }
+    if (helpers.isFunction(operator)) {
+      newFilter.FilterExpression += operator + '(#attr' + newIndex + ', :val' + newIndex + ')';
+      newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+      newFilter.ExpressionAttributeValues[':val' + newIndex] = keyValue;
+    } else if (comparator) {
+      newFilter.FilterExpression += '#attr' + newIndex + ' ' + comparator + ' :val' + newIndex;
+      newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+      newFilter.ExpressionAttributeValues[':val' + newIndex] = keyValue;
+    } else if (helpers.isExpression(operator)) {
+      var newAddedFilter = helpers.handleExpressionOperator(filterObj, operator, key, keyValue, newIndex);
+      newFilter.FilterExpression += newAddedFilter.FilterExpression;
+      _.merge(newFilter.ExpressionAttributeValues, newAddedFilter.ExpressionAttributeValues);
+      _.merge(newFilter.ExpressionAttributeNames, newAddedFilter.ExpressionAttributeNames);
+    } else {
+      newFilter = { error: 'No specified operator applied for filter' };
+    }
+    newIndex++;
+  });
   return newFilter;
 };

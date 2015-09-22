@@ -80,21 +80,27 @@ testDynamo.scan()
   .then(/*...*/)
   .catch(/*...*/);
 
-testDynamo.scan('email = me@email.com')
+testDynamo.scan({email: {eq: 'me@email.com'}})
   .then(/*...*/)
   .catch(/*...*/);
 
-testDynamo.scan('clients contains ClientABC')
+testDynamo.scan({accounts: {contains: 'someuser'}})
   .then(/*...*/)
   .catch(/*...*/);
 
-testDynamo.scan('name in Ben,John')
+testDynamo.scan({firstName: { in: ['Ben', 'Tom']}})
   .then(/*...*/)
   .catch(/*...*/);
 
-testDynamo.scan('age between 18 22')
+testDynamo.scan({age: { between: [18, 26]}})
   .then(/*...*/)
   .catch(/*...*/);
+
+testDynamo.scan({accounts: {contains: 'someuser'}, email: {eq: 'me@email.com'}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+
 ```
 
 ### `createTable`

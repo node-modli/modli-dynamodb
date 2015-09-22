@@ -8,11 +8,11 @@ const expressions = [
 ];
 
 const comparators = [
-  '=',
-  '<>',
-  '<=',
-  '>',
-  '>='
+  {'eq': '='},
+  {'gt': '>'},
+  {'lt': '<'},
+  {'lte': '<='},
+  {'gte': '>='}
 ];
 
 const functions = [
@@ -26,19 +26,26 @@ helpers.isExpression = (str) => {
 };
 
 helpers.isComparator = (str) => {
-  return (_.includes(comparators, str));
+  for (let i = 0; i < comparators.length; i++) {
+    const key = Object.keys(comparators[i])[0];
+    if (Object.keys(comparators[i])[0] === str) {
+      return comparators[i][key];
+    }
+  }
+  return false;
 };
 
 helpers.isFunction = (str) => {
   return (_.includes(functions, str));
 };
 
-helpers.handleExpressionOperator = (arr, str, newIndex) => {
+helpers.handleExpressionOperator = (filterObj, operator, key, keyValue, newIndex) => {
+  const filterRow = filterObj[Object.keys(filterObj)[newIndex - 1]];
   let newFilter = Object.create({});
   newFilter = _.clone(tables.filterExpression, true);
-  if (arr[1] === 'in') {
-    let inArr = arr[2].split(',');
-    newFilter.FilterExpression = '#attr1 ' + arr[1] + '( ';
+  const inArr = filterRow[operator];
+  if (operator === 'in') {
+    newFilter.FilterExpression = '#attr1 ' + operator + '( ';
     let iter = 1;
     _.each(inArr, function(row) {
       if (iter > 1) {
@@ -46,38 +53,50 @@ helpers.handleExpressionOperator = (arr, str, newIndex) => {
       }
       newFilter.FilterExpression += ':val' + newIndex + '_' + iter;
       newFilter.ExpressionAttributeValues[':val' + newIndex + '_' + iter] = row;
-
       iter++;
     });
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = arr[0];
+    newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
     newFilter.FilterExpression += ')';
   }
-  if (arr[1] === 'between') {
-    newFilter.FilterExpression = '#attr1 ' + arr[1] + ' :val' + newIndex + ' and :val' + newIndex + '_1';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = arr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = parseFloat(arr[2]);
-    newFilter.ExpressionAttributeValues[':val' + newIndex + '_1'] = parseFloat(arr[3]);
+  if (operator === 'between') {
+    newFilter.FilterExpression = '#attr' + newIndex + ' ' + operator + ' :val' + newIndex + ' and :val' + newIndex + '_1';
+    newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+    newFilter.ExpressionAttributeValues[':val' + newIndex] = inArr[0];
+    newFilter.ExpressionAttributeValues[':val' + newIndex + '_1'] = inArr[1];
   }
   return newFilter;
 };
 
-helpers.createExpression = (currentFilter, newfilterString, index) => {
-  const newIndex = index || 1;
+helpers.createExpression = (currentFilter, filterObj) => {
+  let newIndex = 1;
   let newFilter = Object.create({});
   newFilter = _.clone(tables.filterExpression, true);
-  const filterArr = newfilterString.split(' ');
-  if (helpers.isFunction(filterArr[1])) {
-    newFilter.FilterExpression = filterArr[1] + '(#attr1, :val1)';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = filterArr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = filterArr[2];
-  } else if (helpers.isComparator(filterArr[1])) {
-    newFilter.FilterExpression = '#attr1 ' + filterArr[1] + ' :val1';
-    newFilter.ExpressionAttributeNames['#attr' + newIndex] = filterArr[0];
-    newFilter.ExpressionAttributeValues[':val' + newIndex] = filterArr[2];
-  } else if (helpers.isExpression(filterArr[1])) {
-    newFilter = helpers.handleExpressionOperator(filterArr, newfilterString, newIndex);
-  } else {
-    newFilter = { error: 'No specified operator applied for filter' };
-  }
+  newFilter.FilterExpression = '';
+  _.each(Object.keys(filterObj), function(key) {
+    const operator = Object.keys(filterObj[key])[0];
+    const comparator = helpers.isComparator(operator);
+    const keyValue = filterObj[key][operator];
+
+    if (newIndex > 1) {
+      newFilter.FilterExpression += ' and ';
+    }
+    if (helpers.isFunction(operator)) {
+      newFilter.FilterExpression += operator + '(#attr' + newIndex + ', :val' + newIndex + ')';
+      newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+      newFilter.ExpressionAttributeValues[':val' + newIndex] = keyValue;
+    } else if (comparator) {
+      newFilter.FilterExpression += '#attr' + newIndex + ' ' + comparator + ' :val' + newIndex;
+      newFilter.ExpressionAttributeNames['#attr' + newIndex] = key;
+      newFilter.ExpressionAttributeValues[':val' + newIndex] = keyValue;
+    } else if (helpers.isExpression(operator)) {
+      const newAddedFilter = helpers.handleExpressionOperator(filterObj, operator, key, keyValue, newIndex);
+      newFilter.FilterExpression += newAddedFilter.FilterExpression;
+      _.merge(newFilter.ExpressionAttributeValues, newAddedFilter.ExpressionAttributeValues);
+      _.merge(newFilter.ExpressionAttributeNames, newAddedFilter.ExpressionAttributeNames);
+    } else {
+      newFilter = { error: 'No specified operator applied for filter' };
+    }
+    newIndex++;
+  });
   return newFilter;
 };
