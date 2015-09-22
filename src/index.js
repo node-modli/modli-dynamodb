@@ -384,6 +384,10 @@ export default class {
   update(hashObject, updatedValuesArray, paramVersion = false) {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
+      const hashkey = Object.keys(hashObject)[0];
+      if (updatedValuesArray[hashkey]) {
+        delete updatedValuesArray[hashkey];
+      }
       const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
       if (validationErrors) {

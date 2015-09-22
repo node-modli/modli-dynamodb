@@ -476,6 +476,10 @@ var _default = (function () {
 
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
+        var hashkey = Object.keys(hashObject)[0];
+        if (updatedValuesArray[hashkey]) {
+          delete updatedValuesArray[hashkey];
+        }
         var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
         var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
         if (validationErrors) {
