@@ -389,6 +389,13 @@ describe('standard model', () => {
       });
     });
 
+    it('updates first account with id as part of body', (done) => {
+      standard.update({id: testAccount1.Item.id}, {id: testAccount1.Item.id, email: 'test@test.com'}).then((data) => {
+        expect(data.email).to.be.equal('test@test.com');
+        done();
+      });
+    });
+
     it('updates account with two values', (done) => {
       standard.update({id: testAccount1.Item.id}, {email: 'test@test.com', firstName: 'jeb'}).then((data) => {
         expect(data.email).to.be.equal('test@test.com');
