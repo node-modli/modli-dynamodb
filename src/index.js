@@ -1,6 +1,7 @@
 const Promise = require('bluebird');
 const _ = require('lodash');
 import { tables } from './dynamo-data';
+import { helpers } from './helpers';
 let AWS = require('aws-sdk');
 let DOC = require('dynamodb-doc');
 
@@ -177,15 +178,30 @@ export default class {
   }
 
   /**
+   * Creates a compatible filter to apply to scanned returns
+   * @memberof dynamodb
+   * @returns {Object} scan ready filter object
+   */
+  createFilter(table, filterObject) {
+    const newFilter = { 'TableName': table };
+    const returnFilter = _.extend(newFilter, helpers.createExpression(newFilter, filterObject));
+    return returnFilter;
+  }
+
+  /**
    * Performs a full unfiltered scan
    * @memberof dynamodb
    * @returns {Object} promise
    */
-  scan(paramVersion = false) {
+  scan(filterObject, paramVersion = false) {
     return new Promise((resolve, reject) => {
       const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
       const table = this.schemas[version].tableName;
-      this.ddb.scan({'TableName': table}, (err, res) => {
+      let scanObject = {'TableName': table};
+      if (filterObject) {
+        scanObject = this.createFilter(table, filterObject);
+      }
+      this.ddb.scan(scanObject, (err, res) => {
         if (err) {
           reject(err);
         } else {

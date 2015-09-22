@@ -73,12 +73,34 @@ testDynamo.list()
 
 ### `scan`
 
-Perform a full unfiltered scan of a table
+Perform a full unfiltered scan of a table with an optional dynamo scan-level filter that doesn't rely on secondary indexes.  Optional filters are constructed in a way that correlates to dynamo filter conditionals
 
 ```javascript
 testDynamo.scan()
   .then(/*...*/)
   .catch(/*...*/);
+
+testDynamo.scan({email: {eq: 'me@email.com'}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan({accounts: {contains: 'someuser'}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan({firstName: { in: ['Ben', 'Tom']}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan({age: { between: [18, 26]}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan({accounts: {contains: 'someuser'}, email: {eq: 'me@email.com'}})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+
 ```
 
 ### `createTable`

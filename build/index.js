@@ -10,6 +10,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var _dynamoData = require('./dynamo-data');
 
+var _helpers = require('./helpers');
+
 var Promise = require('bluebird');
 var _ = require('lodash');
 
@@ -223,21 +225,38 @@ var _default = (function () {
     }
 
     /**
+     * Creates a compatible filter to apply to scanned returns
+     * @memberof dynamodb
+     * @returns {Object} scan ready filter object
+     */
+  }, {
+    key: 'createFilter',
+    value: function createFilter(table, filterObject) {
+      var newFilter = { 'TableName': table };
+      var returnFilter = _.extend(newFilter, _helpers.helpers.createExpression(newFilter, filterObject));
+      return returnFilter;
+    }
+
+    /**
      * Performs a full unfiltered scan
      * @memberof dynamodb
      * @returns {Object} promise
      */
   }, {
     key: 'scan',
-    value: function scan() {
+    value: function scan(filterObject) {
       var _this5 = this;
 
-      var paramVersion = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
         var version = paramVersion === false ? _this5.defaultVersion : paramVersion;
         var table = _this5.schemas[version].tableName;
-        _this5.ddb.scan({ 'TableName': table }, function (err, res) {
+        var scanObject = { 'TableName': table };
+        if (filterObject) {
+          scanObject = _this5.createFilter(table, filterObject);
+        }
+        _this5.ddb.scan(scanObject, function (err, res) {
           if (err) {
             reject(err);
           } else {
