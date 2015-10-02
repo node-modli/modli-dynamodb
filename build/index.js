@@ -476,12 +476,15 @@ var _default = (function () {
 
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
-        var hashkey = Object.keys(hashObject)[0];
-        if (updatedValuesArray[hashkey]) {
-          delete updatedValuesArray[hashkey];
+        var hashKey = Object.keys(hashObject)[0];
+        var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
+        if (updatedValuesArray[hashKey]) {
+          if (updatedValuesArray[hashKey] !== hashObject[hashKey]) {
+            throw new Error('Cannot change primary hash key on update');
+          }
+          delete updatedValuesArray[hashKey];
         }
         var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
-        var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
         if (validationErrors) {
           reject(new Error(validationErrors));
         } else {
