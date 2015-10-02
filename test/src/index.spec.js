@@ -403,6 +403,15 @@ describe('standard model', () => {
       });
     });
 
+    it('fails to update a changed primary hash key', (done) => {
+      standard.update({id: testAccount1.Item.id}, {id: 'baz', email: 'test@test.com', firstName: 'jeb'}).then(() => {
+        done(new Error('should have failed'));
+      }).catch((err) => {
+        expect(err).to.be.an.Error;
+        done();
+      });
+    });
+
     it('fails to update with invalid data', (done) => {
       standard.update({id: testAccount1.Item.id}, {email: 'test@test.com', failValidate: true}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
