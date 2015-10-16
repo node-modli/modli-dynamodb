@@ -404,7 +404,7 @@ describe('standard model', () => {
         numeric.create(numericAccount.Item, '1').then((data) => {
           done(data);
         }).catch(() => {
-          done()
+          done();
         });
       });
     });
