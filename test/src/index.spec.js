@@ -46,6 +46,7 @@ numeric.sanitize = sanitize;
 standard.sanitize = sanitize;
 failAdapter.sanitize = sanitize;
 nogsiAdapter.sanitize = sanitize;
+
 describe('Verifies integration with modli', () => {
   let newModel;
   it('Adds a model to modli object', (done) => {

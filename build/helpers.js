@@ -7,6 +7,7 @@ Object.defineProperty(exports, '__esModule', {
 var _dynamoData = require('./dynamo-data');
 
 var _ = require('lodash');
+var Promise = require('bluebird');
 var helpers = {};
 
 exports.helpers = helpers;
@@ -15,6 +16,31 @@ var expressions = ['between', 'in'];
 var comparators = [{ 'eq': '=' }, { 'gt': '>' }, { 'lt': '<' }, { 'lte': '<=' }, { 'gte': '>=' }];
 
 var functions = ['attribute_type', 'begins_with', 'contains'];
+
+helpers.checkCreateTable = function (modelObj) {
+  var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+  return new Promise(function (resolve, reject) {
+    var version = paramVersion === false ? modelObj.defaultVersion : paramVersion;
+
+    // Skip if the auto create flag isn't set
+    if (!modelObj.schemas[version].autoCreate) {
+      resolve();
+    }
+
+    // Get current list of tables to determine if table exists
+    modelObj.ddb.listTables({}, function (lerr, foundTables) {
+      if (lerr) {
+        reject(lerr);
+      }
+      if (_.contains(foundTables, modelObj.schemas[version].tableName)) {
+        resolve();
+      } else {
+        modelObj.createTableFromModel(paramVersion).then(resolve)['catch'](reject);
+      }
+    });
+  });
+};
 
 helpers.isExpression = function (str) {
   return _.includes(expressions, str);
