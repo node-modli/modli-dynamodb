@@ -78,6 +78,7 @@ describe('Verifies integration with modli', () => {
     expect(newModel.sanitize).to.be.a.function;
   });
 });
+
 describe('dynamo numeric tests', () => {
   describe('get schema', () => {
     it('Checks the schema', (done) => {
@@ -225,15 +226,8 @@ describe('dynamo numeric tests', () => {
       });
     });
   });
-  describe('remove table', () => {
-    it('removes the numeric test table', (done) => {
-      numeric.deleteTable({TableName: testNumericModel.tableName}).then((data) => {
-        expect(data).to.be.an.object;
-        done();
-      });
-    });
-  });
 });
+
 describe('standard model', () => {
   describe('table', () => {
     it('creates the users table', (done) => {
@@ -401,6 +395,39 @@ describe('standard model', () => {
       });
       // Execute
       expect(standard.sayFoo()).to.equal('foo');
+    });
+  });
+
+  describe('autocreate coverage', () => {
+    it('Fails to create on non-existent table', (done) => {
+      numeric.deleteTable({TableName: testNumericModel.tableName}).then(() => {
+        numeric.create(numericAccount.Item, '1').then((data) => {
+          done(data);
+        }).catch(() => {
+          done()
+        });
+      });
+    });
+
+    it('Successfully creates first account on tables from post', (done) => {
+      standard.create(testAccount1.Item, '1').then((data) => {
+        expect(data).to.be.an.object;
+        done();
+      });
+    });
+
+    it('Successfully creates second account on autocreated table', (done) => {
+      standard.create(testAccount2.Item, '1').then((data) => {
+        expect(data).to.be.an.object;
+        done();
+      });
+    });
+
+    it('removes autocreated test table', (done) => {
+      standard.deleteTable({TableName: testModel.tableName}).then((data) => {
+        expect(data).to.be.an.object;
+        done();
+      });
     });
   });
 });
