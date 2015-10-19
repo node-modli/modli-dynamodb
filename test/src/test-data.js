@@ -79,6 +79,7 @@ export const testAccount2 = {
 export const testModel = {
   name: 'tmpuser',
   version: 1,
+  autoCreate: true,
   indexes: [
     { keytype: 'hash', value: 'id', type: 'S'},
     { keytype: 'secondary', value: 'authId', type: 'S'}
@@ -99,6 +100,7 @@ export const userSchema = {
 export const testNumericModel = {
   name: 'numuser',
   version: 1,
+  autoCreate: false,
   indexes: [
     { keytype: 'hash', value: 'id', type: 'N'},
     { keytype: 'secondary', value: 'login', type: 'S'},

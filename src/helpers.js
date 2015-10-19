@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const Promise = require('bluebird');
 import { tables } from './dynamo-data';
 export const helpers = {};
 
@@ -20,6 +21,30 @@ const functions = [
   'begins_with',
   'contains'
 ];
+
+helpers.checkCreateTable = (modelObj, paramVersion = false) => {
+  return new Promise((resolve, reject) => {
+    const version = (paramVersion === false) ? modelObj.defaultVersion : paramVersion;
+
+    // Skip if the auto create flag isn't set
+    if (!modelObj.schemas[version].autoCreate) {
+      resolve();
+    }
+
+    // Get current list of tables to determine if table exists
+    modelObj.ddb.listTables({}, (err, foundTables) => {
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      }
+      if (_.contains(foundTables.TableNames, modelObj.schemas[version].tableName)) {
+        resolve();
+      } else {
+        modelObj.createTableFromModel(paramVersion).then(resolve).catch(reject);
+      }
+    });
+  });
+};
 
 helpers.isExpression = (str) => {
   return (_.includes(expressions, str));

@@ -118,24 +118,26 @@ var _default = (function () {
 
       return new Promise(function (resolve, reject) {
         try {
-          var version = paramVersion === false ? _this.defaultVersion : paramVersion;
-          var validationErrors = _this.validate(body, version);
-          if (validationErrors) {
-            throw new Error('Modli Errors: ' + validationErrors);
-          } else {
-            var createParams = {
-              TableName: _this.schemas[version].tableName,
-              ReturnValues: 'ALL_OLD',
-              Item: body
-            };
-            _this.ddb.putItem(createParams, function (err) {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(body);
-              }
-            });
-          }
+          _helpers.helpers.checkCreateTable(_this, paramVersion).then(function () {
+            var version = paramVersion === false ? _this.defaultVersion : paramVersion;
+            var validationErrors = _this.validate(body, version);
+            if (validationErrors) {
+              throw new Error('Modli Errors: ' + validationErrors);
+            } else {
+              var createParams = {
+                TableName: _this.schemas[version].tableName,
+                ReturnValues: 'ALL_OLD',
+                Item: body
+              };
+              _this.ddb.putItem(createParams, function (err) {
+                if (err) {
+                  reject(err);
+                } else {
+                  resolve(body);
+                }
+              });
+            }
+          })['catch'](reject);
         } catch (exception) {
           throw new Error(exception);
         }
@@ -155,7 +157,9 @@ var _default = (function () {
 
       return new Promise(function (resolve, reject) {
         _this2.ddb.listTables({}, function (err, foundTables) {
-          if (_.contains(foundTables.TableNames, params.TableName)) {
+          var tableList = undefined;
+          tableList = foundTables || { TableNames: [] };
+          if (_.contains(tableList.TableNames, params.TableName)) {
             resolve({ TableName: params.TableName, existed: true });
           } else {
             _this2.ddb.createTable(params, function (createErr, res) {
@@ -250,18 +254,20 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this5.defaultVersion : paramVersion;
-        var table = _this5.schemas[version].tableName;
-        var scanObject = { 'TableName': table };
-        if (filterObject) {
-          scanObject = _this5.createFilter(table, filterObject);
-        }
-        _this5.ddb.scan(scanObject, function (err, res) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res.Items);
+        _helpers.helpers.checkCreateTable(_this5, paramVersion).then(function () {
+          var version = paramVersion === false ? _this5.defaultVersion : paramVersion;
+          var table = _this5.schemas[version].tableName;
+          var scanObject = { 'TableName': table };
+          if (filterObject) {
+            scanObject = _this5.createFilter(table, filterObject);
           }
+          _this5.ddb.scan(scanObject, function (err, res) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(res.Items);
+            }
+          });
         });
       });
     }
@@ -303,28 +309,30 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this7.defaultVersion : paramVersion;
-        var key = Object.keys(obj)[0];
-        var itemPromise = null;
-        var type = null;
+        _helpers.helpers.checkCreateTable(_this7, paramVersion).then(function () {
+          var version = paramVersion === false ? _this7.defaultVersion : paramVersion;
+          var key = Object.keys(obj)[0];
+          var itemPromise = null;
+          var type = null;
 
-        _.each(_this7.schemas[version].indexes, function (row) {
-          if (row.value === key) {
-            type = row.keytype;
-            return false;
-          }
-        });
+          _.each(_this7.schemas[version].indexes, function (row) {
+            if (row.value === key) {
+              type = row.keytype;
+              return false;
+            }
+          });
 
-        if (!type) {
-          reject(new Error('No type'));
-        } else {
-          if (type === 'hash') {
-            itemPromise = _this7.getItemByHash(obj, version);
+          if (!type) {
+            reject(new Error('No type'));
           } else {
-            itemPromise = _this7.getItemById(obj, version);
+            if (type === 'hash') {
+              itemPromise = _this7.getItemByHash(obj, version);
+            } else {
+              itemPromise = _this7.getItemById(obj, version);
+            }
           }
-        }
-        resolve(itemPromise);
+          resolve(itemPromise);
+        })['catch'](reject);
       });
     }
 
@@ -343,32 +351,34 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this8.defaultVersion : paramVersion;
-        var table = _this8.schemas[version].tableName;
-        var key = Object.keys(obj)[0];
-        var params = {
-          TableName: table,
-          IndexName: key + '-index',
-          KeyConditionExpression: key + ' = :hk_val',
-          ExpressionAttributeValues: {
-            ':hk_val': obj[key]
-          }
-        };
-        _this8.ddb.query(params, function (err, data) {
-          var returnValue = null;
-          if (err) {
-            reject(err);
-          } else {
-            (function () {
-              var sanitize = _this8.sanitize;
-              returnValue = [];
-              _.each(data.Items, function (row) {
-                returnValue.push(sanitize(row));
-              });
-              resolve(returnValue);
-            })();
-          }
-        });
+        _helpers.helpers.checkCreateTable(_this8, paramVersion).then(function () {
+          var version = paramVersion === false ? _this8.defaultVersion : paramVersion;
+          var table = _this8.schemas[version].tableName;
+          var key = Object.keys(obj)[0];
+          var params = {
+            TableName: table,
+            IndexName: key + '-index',
+            KeyConditionExpression: key + ' = :hk_val',
+            ExpressionAttributeValues: {
+              ':hk_val': obj[key]
+            }
+          };
+          _this8.ddb.query(params, function (err, data) {
+            var returnValue = null;
+            if (err) {
+              reject(err);
+            } else {
+              (function () {
+                var sanitize = _this8.sanitize;
+                returnValue = [];
+                _.each(data.Items, function (row) {
+                  returnValue.push(sanitize(row));
+                });
+                resolve(returnValue);
+              })();
+            }
+          });
+        })['catch'](reject);
       });
     }
 
@@ -387,42 +397,44 @@ var _default = (function () {
       var paramVersion = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this9.defaultVersion : paramVersion;
-        if (!array) {
-          reject(new Error('Array empty'));
-        }
-        if (array.length < 1) {
-          reject(new Error('Array contained no values'));
-        }
-        var table = _this9.schemas[version].tableName;
-        var params = {
-          RequestItems: {}
-        };
-
-        params.RequestItems[table] = {
-          Keys: []
-        };
-
-        _.each(array, function (val) {
-          var newObj = Object.create({});
-          newObj[hash] = val;
-          params.RequestItems[table].Keys.push(newObj);
-        });
-
-        _this9.ddb.batchGetItem(params, function (err, data) {
-          if (err) {
-            reject(new Error(err));
-          } else {
-            (function () {
-              var returnArray = [];
-              var sanitize = _this9.sanitize;
-              _.each(data, function (row) {
-                returnArray.push(sanitize(row));
-              });
-              resolve(returnArray);
-            })();
+        _helpers.helpers.checkCreateTable(_this9, paramVersion).then(function () {
+          var version = paramVersion === false ? _this9.defaultVersion : paramVersion;
+          if (!array) {
+            reject(new Error('Array empty'));
           }
-        });
+          if (array.length < 1) {
+            reject(new Error('Array contained no values'));
+          }
+          var table = _this9.schemas[version].tableName;
+          var params = {
+            RequestItems: {}
+          };
+
+          params.RequestItems[table] = {
+            Keys: []
+          };
+
+          _.each(array, function (val) {
+            var newObj = Object.create({});
+            newObj[hash] = val;
+            params.RequestItems[table].Keys.push(newObj);
+          });
+
+          _this9.ddb.batchGetItem(params, function (err, data) {
+            if (err) {
+              reject(new Error(err));
+            } else {
+              (function () {
+                var returnArray = [];
+                var sanitize = _this9.sanitize;
+                _.each(data, function (row) {
+                  returnArray.push(sanitize(row));
+                });
+                resolve(returnArray);
+              })();
+            }
+          });
+        })['catch'](reject);
       });
     }
 
@@ -441,21 +453,23 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
-        var table = _this10.schemas[version].tableName;
-        var key = Object.keys(obj)[0];
-        var params = {
-          TableName: table,
-          Key: {}
-        };
-        params.Key[key] = obj[key];
-        _this10.ddb.getItem(params, function (err, data) {
-          if (err) {
-            reject(new Error(err));
-          } else {
-            resolve(_this10.sanitize(data.Item));
-          }
-        });
+        _helpers.helpers.checkCreateTable(_this10, paramVersion).then(function () {
+          var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
+          var table = _this10.schemas[version].tableName;
+          var key = Object.keys(obj)[0];
+          var params = {
+            TableName: table,
+            Key: {}
+          };
+          params.Key[key] = obj[key];
+          _this10.ddb.getItem(params, function (err, data) {
+            if (err) {
+              reject(new Error(err));
+            } else {
+              resolve(_this10.sanitize(data.Item));
+            }
+          });
+        })['catch'](reject);
       });
     }
 
@@ -476,50 +490,52 @@ var _default = (function () {
 
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
-        var hashkey = Object.keys(hashObject)[0];
-        if (updatedValuesArray[hashkey]) {
-          delete updatedValuesArray[hashkey];
-        }
-        var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
-        var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
-        if (validationErrors) {
-          reject(new Error(validationErrors));
-        } else {
-          (function () {
-            var table = _this11.schemas[version].tableName;
-            var key = Object.keys(hashObject)[0];
+        _helpers.helpers.checkCreateTable(_this11, paramVersion).then(function () {
+          var hashkey = Object.keys(hashObject)[0];
+          if (updatedValuesArray[hashkey]) {
+            delete updatedValuesArray[hashkey];
+          }
+          var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
+          var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
+          if (validationErrors) {
+            reject(new Error(validationErrors));
+          } else {
+            (function () {
+              var table = _this11.schemas[version].tableName;
+              var key = Object.keys(hashObject)[0];
 
-            var params = {
-              TableName: table,
-              Key: {},
-              // Assume a minimum of one param set
-              UpdateExpression: 'SET #param1 = :val1',
-              ExpressionAttributeNames: {},
-              ExpressionAttributeValues: {},
-              ReturnValues: 'ALL_NEW',
-              ReturnConsumedCapacity: 'NONE',
-              ReturnItemCollectionMetrics: 'NONE'
-            };
-            params.Key[key] = hashObject[key];
+              var params = {
+                TableName: table,
+                Key: {},
+                // Assume a minimum of one param set
+                UpdateExpression: 'SET #param1 = :val1',
+                ExpressionAttributeNames: {},
+                ExpressionAttributeValues: {},
+                ReturnValues: 'ALL_NEW',
+                ReturnConsumedCapacity: 'NONE',
+                ReturnItemCollectionMetrics: 'NONE'
+              };
+              params.Key[key] = hashObject[key];
 
-            var i = 0;
-            Object.keys(updatedValuesArray).forEach(function (valueKey) {
-              i++;
-              params.ExpressionAttributeNames['#param' + i] = valueKey;
-              params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
-              if (i > 1) {
-                params.UpdateExpression += ', #param' + i + ' = :val' + i;
-              }
-            });
-            _this11.ddb.updateItem(params, function (err, data) {
-              if (err) {
-                reject(new Error(err));
-              } else {
-                resolve(data.Attributes);
-              }
-            });
-          })();
-        }
+              var i = 0;
+              Object.keys(updatedValuesArray).forEach(function (valueKey) {
+                i++;
+                params.ExpressionAttributeNames['#param' + i] = valueKey;
+                params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
+                if (i > 1) {
+                  params.UpdateExpression += ', #param' + i + ' = :val' + i;
+                }
+              });
+              _this11.ddb.updateItem(params, function (err, data) {
+                if (err) {
+                  reject(new Error(err));
+                } else {
+                  resolve(data.Attributes);
+                }
+              });
+            })();
+          }
+        })['catch'](reject);
       });
     }
 
@@ -538,22 +554,24 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
-        var key = Object.keys(hashObject)[0];
-        var table = _this12.schemas[version].tableName;
+        _helpers.helpers.checkCreateTable(_this12, paramVersion).then(function () {
+          var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
+          var key = Object.keys(hashObject)[0];
+          var table = _this12.schemas[version].tableName;
 
-        var params = {
-          TableName: table,
-          Key: {}
-        };
-        params.Key[key] = hashObject[key];
-        _this12.ddb.deleteItem(params, function (err, data) {
-          if (err) {
-            reject(new Error(err));
-          } else {
-            resolve(data);
-          }
-        });
+          var params = {
+            TableName: table,
+            Key: {}
+          };
+          params.Key[key] = hashObject[key];
+          _this12.ddb.deleteItem(params, function (err, data) {
+            if (err) {
+              reject(new Error(err));
+            } else {
+              resolve(data);
+            }
+          });
+        })['catch'](reject);
       });
     }
 

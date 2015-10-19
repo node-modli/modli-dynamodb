@@ -85,24 +85,26 @@ export default class {
   create(body, paramVersion = false) {
     return new Promise((resolve, reject) => {
       try {
-        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-        const validationErrors = this.validate(body, version);
-        if (validationErrors) {
-          throw new Error('Modli Errors: ' + validationErrors);
-        } else {
-          const createParams = {
-            TableName: this.schemas[version].tableName,
-            ReturnValues: 'ALL_OLD',
-            Item: body
-          };
-          this.ddb.putItem(createParams, function(err) {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(body);
-            }
-          });
-        }
+        helpers.checkCreateTable(this, paramVersion).then(() => {
+          const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+          const validationErrors = this.validate(body, version);
+          if (validationErrors) {
+            throw new Error('Modli Errors: ' + validationErrors);
+          } else {
+            const createParams = {
+              TableName: this.schemas[version].tableName,
+              ReturnValues: 'ALL_OLD',
+              Item: body
+            };
+            this.ddb.putItem(createParams, function(err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(body);
+              }
+            });
+          }
+        }).catch(reject);
       } catch (exception) {
         throw new Error(exception);
       }
@@ -118,7 +120,9 @@ export default class {
   createTable(params) {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, foundTables) => {
-        if (_.contains(foundTables.TableNames, params.TableName)) {
+        let tableList;
+        tableList = foundTables || { TableNames: [] };
+        if (_.contains(tableList.TableNames, params.TableName)) {
           resolve({TableName: params.TableName, existed: true});
         } else {
           this.ddb.createTable(params, (createErr, res) => {
@@ -195,18 +199,20 @@ export default class {
    */
   scan(filterObject, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const table = this.schemas[version].tableName;
-      let scanObject = {'TableName': table};
-      if (filterObject) {
-        scanObject = this.createFilter(table, filterObject);
-      }
-      this.ddb.scan(scanObject, (err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(res.Items);
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const table = this.schemas[version].tableName;
+        let scanObject = {'TableName': table};
+        if (filterObject) {
+          scanObject = this.createFilter(table, filterObject);
         }
+        this.ddb.scan(scanObject, (err, res) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(res.Items);
+          }
+        });
       });
     });
   }
@@ -238,28 +244,30 @@ export default class {
    */
   read(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const key = Object.keys(obj)[0];
-      let itemPromise = null;
-      let type = null;
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const key = Object.keys(obj)[0];
+        let itemPromise = null;
+        let type = null;
 
-      _.each(this.schemas[version].indexes, function(row) {
-        if (row.value === key) {
-          type = row.keytype;
-          return false;
-        }
-      });
+        _.each(this.schemas[version].indexes, function(row) {
+          if (row.value === key) {
+            type = row.keytype;
+            return false;
+          }
+        });
 
-      if (!type) {
-        reject(new Error('No type'));
-      } else {
-        if (type === 'hash') {
-          itemPromise = this.getItemByHash(obj, version);
+        if (!type) {
+          reject(new Error('No type'));
         } else {
-          itemPromise = this.getItemById(obj, version);
+          if (type === 'hash') {
+            itemPromise = this.getItemByHash(obj, version);
+          } else {
+            itemPromise = this.getItemById(obj, version);
+          }
         }
-      }
-      resolve(itemPromise);
+        resolve(itemPromise);
+      }).catch(reject);
     });
   }
 
@@ -272,30 +280,32 @@ export default class {
    */
   getItemById(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const table = this.schemas[version].tableName;
-      const key = Object.keys(obj)[0];
-      const params = {
-        TableName: table,
-        IndexName: key + '-index',
-        KeyConditionExpression: key + ' = :hk_val',
-        ExpressionAttributeValues: {
-          ':hk_val': obj[key]
-        }
-      };
-      this.ddb.query(params, (err, data) => {
-        let returnValue = null;
-        if (err) {
-          reject(err);
-        } else {
-          const sanitize = this.sanitize;
-          returnValue = [];
-          _.each(data.Items, function(row) {
-            returnValue.push(sanitize(row));
-          });
-          resolve(returnValue);
-        }
-      });
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const table = this.schemas[version].tableName;
+        const key = Object.keys(obj)[0];
+        const params = {
+          TableName: table,
+          IndexName: key + '-index',
+          KeyConditionExpression: key + ' = :hk_val',
+          ExpressionAttributeValues: {
+            ':hk_val': obj[key]
+          }
+        };
+        this.ddb.query(params, (err, data) => {
+          let returnValue = null;
+          if (err) {
+            reject(err);
+          } else {
+            const sanitize = this.sanitize;
+            returnValue = [];
+            _.each(data.Items, function(row) {
+              returnValue.push(sanitize(row));
+            });
+            resolve(returnValue);
+          }
+        });
+      }).catch(reject);
     });
   }
 
@@ -308,40 +318,42 @@ export default class {
     */
   getItemsInArray(hash, array, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      if (!array) {
-        reject(new Error('Array empty'));
-      }
-      if (array.length < 1) {
-        reject(new Error('Array contained no values'));
-      }
-      const table = this.schemas[version].tableName;
-      let params = {
-        RequestItems: {}
-      };
-
-      params.RequestItems[table] = {
-        Keys: []
-      };
-
-      _.each(array, (val) => {
-        let newObj = Object.create({});
-        newObj[hash] = val;
-        params.RequestItems[table].Keys.push(newObj);
-      });
-
-      this.ddb.batchGetItem(params, (err, data) => {
-        if (err) {
-          reject(new Error(err));
-        } else {
-          let returnArray = [];
-          const sanitize = this.sanitize;
-          _.each(data, function(row) {
-            returnArray.push(sanitize(row));
-          });
-          resolve(returnArray);
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        if (!array) {
+          reject(new Error('Array empty'));
         }
-      });
+        if (array.length < 1) {
+          reject(new Error('Array contained no values'));
+        }
+        const table = this.schemas[version].tableName;
+        let params = {
+          RequestItems: {}
+        };
+
+        params.RequestItems[table] = {
+          Keys: []
+        };
+
+        _.each(array, (val) => {
+          let newObj = Object.create({});
+          newObj[hash] = val;
+          params.RequestItems[table].Keys.push(newObj);
+        });
+
+        this.ddb.batchGetItem(params, (err, data) => {
+          if (err) {
+            reject(new Error(err));
+          } else {
+            let returnArray = [];
+            const sanitize = this.sanitize;
+            _.each(data, function(row) {
+              returnArray.push(sanitize(row));
+            });
+            resolve(returnArray);
+          }
+        });
+      }).catch(reject);
     });
   }
 
@@ -354,21 +366,23 @@ export default class {
    */
   getItemByHash(obj, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const table = this.schemas[version].tableName;
-      const key = Object.keys(obj)[0];
-      let params = {
-        TableName: table,
-        Key: {}
-      };
-      params.Key[key] = obj[key];
-      this.ddb.getItem(params, (err, data) => {
-        if (err) {
-          reject(new Error(err));
-        } else {
-          resolve(this.sanitize(data.Item));
-        }
-      });
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const table = this.schemas[version].tableName;
+        const key = Object.keys(obj)[0];
+        let params = {
+          TableName: table,
+          Key: {}
+        };
+        params.Key[key] = obj[key];
+        this.ddb.getItem(params, (err, data) => {
+          if (err) {
+            reject(new Error(err));
+          } else {
+            resolve(this.sanitize(data.Item));
+          }
+        });
+      }).catch(reject);
     });
   }
 
@@ -384,50 +398,52 @@ export default class {
   update(hashObject, updatedValuesArray, paramVersion = false) {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
-      const hashkey = Object.keys(hashObject)[0];
-      if (updatedValuesArray[hashkey]) {
-        delete updatedValuesArray[hashkey];
-      }
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
-      if (validationErrors) {
-        reject(new Error(validationErrors));
-      } else {
-        const table = this.schemas[version].tableName;
-        const key = Object.keys(hashObject)[0];
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const hashkey = Object.keys(hashObject)[0];
+        if (updatedValuesArray[hashkey]) {
+          delete updatedValuesArray[hashkey];
+        }
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
+        if (validationErrors) {
+          reject(new Error(validationErrors));
+        } else {
+          const table = this.schemas[version].tableName;
+          const key = Object.keys(hashObject)[0];
 
-        let params = {
-          TableName: table,
-          Key: {},
-          // Assume a minimum of one param set
-          UpdateExpression: 'SET #param1 = :val1',
-          ExpressionAttributeNames: {
-          },
-          ExpressionAttributeValues: {
-          },
-          ReturnValues: 'ALL_NEW',
-          ReturnConsumedCapacity: 'NONE',
-          ReturnItemCollectionMetrics: 'NONE'
-        };
-        params.Key[key] = hashObject[key];
+          let params = {
+            TableName: table,
+            Key: {},
+            // Assume a minimum of one param set
+            UpdateExpression: 'SET #param1 = :val1',
+            ExpressionAttributeNames: {
+            },
+            ExpressionAttributeValues: {
+            },
+            ReturnValues: 'ALL_NEW',
+            ReturnConsumedCapacity: 'NONE',
+            ReturnItemCollectionMetrics: 'NONE'
+          };
+          params.Key[key] = hashObject[key];
 
-        let i = 0;
-        Object.keys(updatedValuesArray).forEach((valueKey) => {
-          i++;
-          params.ExpressionAttributeNames['#param' + i] = valueKey;
-          params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
-          if (i > 1) {
-            params.UpdateExpression += ', #param' + i + ' = :val' + i;
-          }
-        });
-        this.ddb.updateItem(params, function(err, data) {
-          if (err) {
-            reject(new Error(err));
-          } else {
-            resolve(data.Attributes);
-          }
-        });
-      }
+          let i = 0;
+          Object.keys(updatedValuesArray).forEach((valueKey) => {
+            i++;
+            params.ExpressionAttributeNames['#param' + i] = valueKey;
+            params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
+            if (i > 1) {
+              params.UpdateExpression += ', #param' + i + ' = :val' + i;
+            }
+          });
+          this.ddb.updateItem(params, function(err, data) {
+            if (err) {
+              reject(new Error(err));
+            } else {
+              resolve(data.Attributes);
+            }
+          });
+        }
+      }).catch(reject);
     });
   }
 
@@ -440,22 +456,24 @@ export default class {
    */
   delete(hashObject, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const key = Object.keys(hashObject)[0];
-      const table = this.schemas[version].tableName;
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const key = Object.keys(hashObject)[0];
+        const table = this.schemas[version].tableName;
 
-      let params = {
-        TableName: table,
-        Key: {}
-      };
-      params.Key[key] = hashObject[key];
-      this.ddb.deleteItem(params, (err, data) => {
-        if (err) {
-          reject(new Error(err));
-        } else {
-          resolve(data);
-        }
-      });
+        let params = {
+          TableName: table,
+          Key: {}
+        };
+        params.Key[key] = hashObject[key];
+        this.ddb.deleteItem(params, (err, data) => {
+          if (err) {
+            reject(new Error(err));
+          } else {
+            resolve(data);
+          }
+        });
+      }).catch(reject);
     });
   }
 
