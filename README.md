@@ -29,7 +29,7 @@ let dynamoConfig = {
 };
 ```
 
-Add an instance of the model where the autoCreate flag is used to determine if calls to non-existant tables should automatically create the table from the model
+Add an instance of the model where the `autoCreate` flag is used to determine if calls to non-existant tables should automatically create the table from the model
 
 ```javascript
 model.add({
