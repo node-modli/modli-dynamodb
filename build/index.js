@@ -125,31 +125,26 @@ var _default = (function () {
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        try {
-          _helpers.helpers.checkCreateTable(_this, paramVersion).then(function () {
-            var version = paramVersion === false ? _this.defaultVersion : paramVersion;
-            var validationErrors = _this.validate(body, version);
-            if (validationErrors) {
-              throw new Error('Modli Errors: ' + validationErrors);
-            } else {
-              var createParams = {
-                TableName: _this.schemas[version].tableName,
-                ReturnValues: 'ALL_OLD',
-                Item: body
-              };
-              _this.ddb.putItem(createParams, function (err) {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve(body);
-                }
-              });
-            }
-          })['catch'](reject);
-        } catch (exception) {
-          // istanbul ignore next
-          throw new Error(exception);
-        }
+        _helpers.helpers.checkCreateTable(_this, paramVersion).then(function () {
+          var version = paramVersion === false ? _this.defaultVersion : paramVersion;
+          var validationErrors = _this.validate(body, version);
+          if (validationErrors) {
+            throw new Error('Modli Errors: ' + validationErrors);
+          } else {
+            var createParams = {
+              TableName: _this.schemas[version].tableName,
+              ReturnValues: 'ALL_OLD',
+              Item: body
+            };
+            _this.ddb.putItem(createParams, function (err) {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(body);
+              }
+            });
+          }
+        })['catch'](reject);
       });
     }
 

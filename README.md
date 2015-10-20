@@ -33,7 +33,7 @@ Add an instance of the model where the `autoCreate` flag is used to determine if
 
 Use `indexes` to define the hash key and global secondary indexes as desired.
 
-The optional index key `projectionType` can specify a projection of type 'ALL', 'KEYS_ONLY' or 'INCLUDE'.  Please note that 'INCLUDE' must also include the `nonKeyAtrributes` array value as well. 
+The optional index key `projectionType` can specify a projection of type 'ALL', 'KEYS_ONLY' or 'INCLUDE'.  Please note that 'INCLUDE' must also include the `nonKeyAttributes` array value as well. 
 
 Both `projectionType` and `nonKeyAttributes` are optional values and the projection type will default to 'ALL' in their absence.
 

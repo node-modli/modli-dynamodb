@@ -33,10 +33,6 @@ helpers.checkCreateTable = (modelObj, paramVersion = false) => {
 
     // Get current list of tables to determine if table exists
     modelObj.ddb.listTables({}, (err, foundTables) => {
-      /* istanbul ignore if */
-      if (err) {
-        reject(err);
-      }
       if (_.contains(foundTables.TableNames, modelObj.schemas[version].tableName)) {
         resolve();
       } else {

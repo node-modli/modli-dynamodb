@@ -56,7 +56,7 @@ projectionAdapter.sanitize = sanitize;
 includeAdapter.sanitize = sanitize;
 
 describe('Non standard projection types', () => {
-  it('Creates the KEY_TYPES only table', (done) => {
+  it('Creates the KEYS_ONLY only table', (done) => {
     projectionAdapter.createTableFromModel().then((data) => {
       expect(data).to.be.an.object;
       done();
