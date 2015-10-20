@@ -55,22 +55,34 @@ nogsiAdapter.sanitize = sanitize;
 projectionAdapter.sanitize = sanitize;
 includeAdapter.sanitize = sanitize;
 
-describe('Non standard project types', () => {
+describe('Non standard projection types', () => {
   it('Creates the KEY_TYPES only table', (done) => {
     projectionAdapter.createTableFromModel().then((data) => {
       expect(data).to.be.an.object;
       done();
-    });  
+    });
   });
 
   it('Creates the INCLUDE only table', (done) => {
     includeAdapter.createTableFromModel().then((data) => {
       expect(data).to.be.an.object;
       done();
-    });  
+    });
   });
 
+  it('removes the projection table', (done) => {
+    projectionAdapter.deleteTable({TableName: dbData.testProjectionModel.tableName}).then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
 
+  it('removes the test table', (done) => {
+    includeAdapter.deleteTable({TableName: dbData.testIncludeModel.tableName}).then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
 });
 
 describe('Verifies integration with modli', () => {
