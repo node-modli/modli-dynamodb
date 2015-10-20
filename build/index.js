@@ -68,6 +68,14 @@ var _default = (function () {
     value: function generateSecondaryIndex(params) {
       var newIndex = Object.create({});
       newIndex = _.clone(_dynamoData.tables.secondaryIndex, true);
+      if (params.projectionType) {
+        newIndex.Projection.ProjectionType = params.projectionType;
+        if (params.nonKeyAttributes) {
+          newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+          delete params.nonKeyAttributes;
+        }
+        delete params.projectionType;
+      }
       newIndex.IndexName = params.value + '-index';
       newIndex.KeySchema.push(this.generateKey(params));
       return newIndex;
@@ -139,6 +147,7 @@ var _default = (function () {
             }
           })['catch'](reject);
         } catch (exception) {
+          // istanbul ignore next
           throw new Error(exception);
         }
       });

@@ -45,6 +45,14 @@ export default class {
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
     newIndex = _.clone(tables.secondaryIndex, true);
+    if (params.projectionType) {
+      newIndex.Projection.ProjectionType = params.projectionType;
+      if (params.nonKeyAttributes) {
+        newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+        delete params.nonKeyAttributes;
+      }
+      delete params.projectionType;
+    }
     newIndex.IndexName = params.value + '-index';
     newIndex.KeySchema.push(this.generateKey(params));
     return newIndex;
@@ -106,6 +114,7 @@ export default class {
           }
         }).catch(reject);
       } catch (exception) {
+        // istanbul ignore next
         throw new Error(exception);
       }
     });
