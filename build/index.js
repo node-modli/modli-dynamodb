@@ -71,7 +71,9 @@ var _default = (function () {
       if (params.projectionType) {
         newIndex.Projection.ProjectionType = params.projectionType;
         if (params.nonKeyAttributes) {
-          newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+          if (params.projectionType === 'INCLUDE') {
+            newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+          }
           delete params.nonKeyAttributes;
         }
         delete params.projectionType;

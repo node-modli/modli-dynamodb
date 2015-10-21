@@ -47,8 +47,10 @@ export default class {
     newIndex = _.clone(tables.secondaryIndex, true);
     if (params.projectionType) {
       newIndex.Projection.ProjectionType = params.projectionType;
-      if (params.nonKeyAttributes && params.projectionType === 'INCLUDE') {
-        newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+      if (params.nonKeyAttributes) {
+        if (params.projectionType === 'INCLUDE') {
+          newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+        }
         delete params.nonKeyAttributes;
       }
       delete params.projectionType;
