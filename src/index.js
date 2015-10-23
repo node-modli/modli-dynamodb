@@ -45,6 +45,16 @@ export default class {
   generateSecondaryIndex(params) {
     let newIndex = Object.create({});
     newIndex = _.clone(tables.secondaryIndex, true);
+    if (params.projectionType) {
+      newIndex.Projection.ProjectionType = params.projectionType;
+      if (params.nonKeyAttributes) {
+        if (params.projectionType === 'INCLUDE') {
+          newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
+        }
+        delete params.nonKeyAttributes;
+      }
+      delete params.projectionType;
+    }
     newIndex.IndexName = params.value + '-index';
     newIndex.KeySchema.push(this.generateKey(params));
     return newIndex;
@@ -84,30 +94,26 @@ export default class {
    */
   create(body, paramVersion = false) {
     return new Promise((resolve, reject) => {
-      try {
-        helpers.checkCreateTable(this, paramVersion).then(() => {
-          const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-          const validationErrors = this.validate(body, version);
-          if (validationErrors) {
-            throw new Error('Modli Errors: ' + validationErrors);
-          } else {
-            const createParams = {
-              TableName: this.schemas[version].tableName,
-              ReturnValues: 'ALL_OLD',
-              Item: body
-            };
-            this.ddb.putItem(createParams, function(err) {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(body);
-              }
-            });
-          }
-        }).catch(reject);
-      } catch (exception) {
-        throw new Error(exception);
-      }
+      helpers.checkCreateTable(this, paramVersion).then(() => {
+        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+        const validationErrors = this.validate(body, version);
+        if (validationErrors) {
+          throw new Error('Modli Errors: ' + validationErrors);
+        } else {
+          const createParams = {
+            TableName: this.schemas[version].tableName,
+            ReturnValues: 'ALL_OLD',
+            Item: body
+          };
+          this.ddb.putItem(createParams, function(err) {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(body);
+            }
+          });
+        }
+      }).catch(reject);
     });
   }
 

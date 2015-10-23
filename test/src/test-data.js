@@ -1,7 +1,9 @@
 import { Joi } from 'modli';
 
+export const dbData = {};
+
 // Mockup to represent numeric keys and multiple gsi
-export const numericAccount = {
+dbData.numericAccount = {
   TableName: 'numusers',
   Item: {
     'id': 1,              // Hash
@@ -18,7 +20,7 @@ export const numericAccount = {
 
 
 // Standard mockup to match usrusers
-export const testAccount1 = {
+dbData.testAccount1 = {
   TableName: 'tmpusers',
   Item: {
     'id': 'ben1',
@@ -47,7 +49,7 @@ export const testAccount1 = {
   ReturnItemCollectionMetrics: 'NONE' // optional (NONE | SIZE)
 };
 
-export const testAccount2 = {
+dbData.testAccount2 = {
   TableName: 'tmpusers',
   Item: {
     'id': 'ben2',
@@ -76,7 +78,7 @@ export const testAccount2 = {
   ReturnItemCollectionMetrics: 'NONE' // optional (NONE | SIZE)
 };
 
-export const testModel = {
+dbData.testModel = {
   name: 'tmpuser',
   version: 1,
   autoCreate: true,
@@ -90,14 +92,14 @@ export const testModel = {
   }
 };
 
-export const userSchema = {
+dbData.userSchema = {
   id: Joi.string(),
   password: Joi.string(),
   firstName: Joi.string(),
   lastName: Joi.string()
 };
 
-export const testNumericModel = {
+dbData.testNumericModel = {
   name: 'numuser',
   version: 1,
   autoCreate: false,
@@ -112,7 +114,36 @@ export const testNumericModel = {
   }
 };
 
-export const badModel = {
+dbData.testProjectionModel = {
+  name: 'useraccount',
+  version: 1,
+  autoCreate: false,
+  indexes: [
+    { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'KEYS_ONLY'}
+  ],
+  tableName: 'useraccounts',
+  schema: {
+    permissions: {}
+  }
+};
+
+
+dbData.testIncludeModel = {
+  name: 'userinclude',
+  version: 1,
+  autoCreate: false,
+  indexes: [
+    { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age']}
+  ],
+  tableName: 'userincludes',
+  schema: {
+    permissions: {}
+  }
+};
+
+dbData.badModel = {
   name: 'tmpuser',
   version: 1,
   indexes: [
@@ -125,7 +156,7 @@ export const badModel = {
   }
 };
 
-export const nogsiModel = {
+dbData.nogsiModel = {
   name: 'nogscis',
   version: 1,
   indexes: [

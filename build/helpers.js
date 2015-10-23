@@ -30,10 +30,6 @@ helpers.checkCreateTable = function (modelObj) {
 
     // Get current list of tables to determine if table exists
     modelObj.ddb.listTables({}, function (err, foundTables) {
-      /* istanbul ignore if */
-      if (err) {
-        reject(err);
-      }
       if (_.contains(foundTables.TableNames, modelObj.schemas[version].tableName)) {
         resolve();
       } else {
