@@ -374,11 +374,14 @@ var _default = (function () {
             if (err) {
               reject(err);
             } else {
-              returnValue = [];
-              _.each(data.Items, function (row) {
-                returnValue.push(this.sanitize(row));
-              });
-              resolve(returnValue);
+              (function () {
+                var cachedThis = _this8;
+                returnValue = [];
+                _.each(data.Items, function (row) {
+                  returnValue.push(cachedThis.sanitize(row));
+                });
+                resolve(returnValue);
+              })();
             }
           });
         })['catch'](reject);
