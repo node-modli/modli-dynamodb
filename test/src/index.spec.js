@@ -2,7 +2,7 @@
 /* global expect, request, describe, it, before, after */
 import '../setup';
 import DynamoAdapter from '../../src/index.js';
-import { testAccount1, testAccount2, testModel, testNumericModel, badModel, nogsiModel, numericAccount, userSchema} from './test-data';
+import { dbData } from './test-data';
 import { model, adapter, use } from 'modli';
 let dynamoConfig = {
   region: 'us-east-1',
@@ -15,11 +15,17 @@ const standard = new DynamoAdapter(dynamoConfig);
 const numeric = new DynamoAdapter(dynamoConfig);
 const failAdapter = new DynamoAdapter(dynamoConfig);
 const nogsiAdapter = new DynamoAdapter(dynamoConfig);
+const projectionAdapter = new DynamoAdapter(dynamoConfig);
+const includeAdapter = new DynamoAdapter(dynamoConfig);
+
 // Set the schemas
-numeric.setSchema(testNumericModel, '1');
-standard.setSchema(testModel, '1');
-failAdapter.setSchema(badModel, '1');
-nogsiAdapter.setSchema(nogsiModel, '1');
+numeric.setSchema(dbData.testNumericModel, '1');
+standard.setSchema(dbData.testModel, '1');
+failAdapter.setSchema(dbData.badModel, '1');
+nogsiAdapter.setSchema(dbData.nogsiModel, '1');
+projectionAdapter.setSchema(dbData.testProjectionModel, '1');
+includeAdapter.setSchema(dbData.testIncludeModel, '1');
+
 const validate = (body) => {
   // Test validation failure by passing `failValidate: true`
   if (body.Item) {
@@ -46,6 +52,38 @@ numeric.sanitize = sanitize;
 standard.sanitize = sanitize;
 failAdapter.sanitize = sanitize;
 nogsiAdapter.sanitize = sanitize;
+projectionAdapter.sanitize = sanitize;
+includeAdapter.sanitize = sanitize;
+
+describe('Non standard projection types', () => {
+  it('Creates the KEYS_ONLY only table', (done) => {
+    projectionAdapter.createTableFromModel().then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
+
+  it('Creates the INCLUDE only table', (done) => {
+    includeAdapter.createTableFromModel().then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
+
+  it('removes the projection table', (done) => {
+    projectionAdapter.deleteTable({TableName: dbData.testProjectionModel.tableName}).then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
+
+  it('removes the test table', (done) => {
+    includeAdapter.deleteTable({TableName: dbData.testIncludeModel.tableName}).then((data) => {
+      expect(data).to.be.an.object;
+      done();
+    });
+  });
+});
 
 describe('Verifies integration with modli', () => {
   let newModel;
@@ -53,11 +91,11 @@ describe('Verifies integration with modli', () => {
     model.add({
       name: 'roles',
       version: 1,
-      schema: userSchema
+      schema: dbData.userSchema
     });
-    expect(testModel.schemas).to.be.an.object;
-    expect(testModel.validate).to.be.a.function;
-    expect(testModel.sanitize).to.be.a.function;
+    expect(dbData.testModel.schemas).to.be.an.object;
+    expect(dbData.testModel.validate).to.be.a.function;
+    expect(dbData.testModel.sanitize).to.be.a.function;
     done();
   });
   it('Adds instance of the adapter', (done) => {
@@ -102,7 +140,7 @@ describe('dynamo numeric tests', () => {
   });
   describe('create', () => {
     it('Creates first entry', (done) => {
-      numeric.create(numericAccount.Item, '1').then((data) => {
+      numeric.create(dbData.numericAccount.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -110,9 +148,9 @@ describe('dynamo numeric tests', () => {
   });
   describe('fail validation', () => {
     it('Hardcode failure params to fail', (done) => {
-      numericAccount.Item.failValidate = true;
-      numeric.create(numericAccount.Item).then(done).catch((err) => {
-        delete numericAccount.Item.failValidate;
+      dbData.numericAccount.Item.failValidate = true;
+      numeric.create(dbData.numericAccount.Item).then(done).catch((err) => {
+        delete dbData.numericAccount.Item.failValidate;
         expect(err).to.be.an.instanceof(Error);
         done();
       });
@@ -144,7 +182,7 @@ describe('dynamo numeric tests', () => {
   });
   describe('deletes no gsi table', () => {
     it('Creates table with no global secondary', (done) => {
-      nogsiAdapter.deleteTable({TableName: nogsiModel.TableName}).then(done).catch((err) => {
+      nogsiAdapter.deleteTable({TableName: dbData.nogsiModel.TableName}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
         done();
       });
@@ -196,13 +234,13 @@ describe('dynamo numeric tests', () => {
   });
   describe('read', () => {
     it('reads by numeric hash', (done) => {
-      numeric.read({'id': numericAccount.Item.id}).then((data) => {
+      numeric.read({'id': dbData.numericAccount.Item.id}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
     it('reads by numeric secondary', (done) => {
-      numeric.read({'age': numericAccount.Item.age}).then((data) => {
+      numeric.read({'age': dbData.numericAccount.Item.age}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -249,13 +287,13 @@ describe('standard model', () => {
   });
   describe('create accounts', () => {
     it('Creates first entry', (done) => {
-      standard.create(testAccount1.Item, '1').then((data) => {
+      standard.create(dbData.testAccount1.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
     it('Creates second entry', (done) => {
-      standard.create(testAccount2.Item, '1').then((data) => {
+      standard.create(dbData.testAccount2.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -307,13 +345,13 @@ describe('standard model', () => {
   });
   describe('read', () => {
     it('reads by hash', (done) => {
-      standard.read({'id': testAccount1.Item.id}).then((data) => {
+      standard.read({'id': dbData.testAccount1.Item.id}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
     it('reads by secondary', (done) => {
-      standard.read({'authId': testAccount1.Item.authId}).then((data) => {
+      standard.read({'authId': dbData.testAccount1.Item.authId}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -321,7 +359,7 @@ describe('standard model', () => {
   });
   describe('get in array', () => {
     it('fetches items by array', (done) => {
-      standard.getItemsInArray('id', [testAccount1.Item.id, testAccount2.Item.id]).then((data) => {
+      standard.getItemsInArray('id', [dbData.testAccount1.Item.id, dbData.testAccount2.Item.id]).then((data) => {
         expect(data).to.be.an.array;
         done();
       });
@@ -329,25 +367,25 @@ describe('standard model', () => {
   });
   describe('update', () => {
     it('updates first account', (done) => {
-      standard.update({id: testAccount1.Item.id}, {email: 'test@test.com'}).then((data) => {
+      standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com'}).then((data) => {
         expect(data.email).to.be.equal('test@test.com');
         done();
       });
     });
     it('updates first account with id as part of body', (done) => {
-      standard.update({id: testAccount1.Item.id}, {id: testAccount1.Item.id, email: 'test@test.com'}).then((data) => {
+      standard.update({id: dbData.testAccount1.Item.id}, {id: dbData.testAccount1.Item.id, email: 'test@test.com'}).then((data) => {
         expect(data.email).to.be.equal('test@test.com');
         done();
       });
     });
     it('updates account with two values', (done) => {
-      standard.update({id: testAccount1.Item.id}, {email: 'test@test.com', firstName: 'jeb'}).then((data) => {
+      standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com', firstName: 'jeb'}).then((data) => {
         expect(data.email).to.be.equal('test@test.com');
         done();
       });
     });
     it('fails to update with invalid data', (done) => {
-      standard.update({id: testAccount1.Item.id}, {email: 'test@test.com', failValidate: true}).then(done).catch((err) => {
+      standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com', failValidate: true}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
         done();
       });
@@ -361,13 +399,13 @@ describe('standard model', () => {
   });
   describe('delete', () => {
     it('deletes first account', (done) => {
-      standard.delete({id: testAccount1.Item.id}).then((data) => {
+      standard.delete({id: dbData.testAccount1.Item.id}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
     it('deletes second account', (done) => {
-      standard.delete({id: testAccount2.Item.id}).then((data) => {
+      standard.delete({id: dbData.testAccount2.Item.id}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -381,7 +419,7 @@ describe('standard model', () => {
   });
   describe('remove table', () => {
     it('removes the test table', (done) => {
-      standard.deleteTable({TableName: testModel.tableName}).then((data) => {
+      standard.deleteTable({TableName: dbData.testModel.tableName}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -400,8 +438,8 @@ describe('standard model', () => {
 
   describe('autocreate coverage', () => {
     it('Fails to create on non-existent table', (done) => {
-      numeric.deleteTable({TableName: testNumericModel.tableName}).then(() => {
-        numeric.create(numericAccount.Item, '1').then((data) => {
+      numeric.deleteTable({TableName: dbData.testNumericModel.tableName}).then(() => {
+        numeric.create(dbData.numericAccount.Item, '1').then((data) => {
           done(data);
         }).catch(() => {
           done();
@@ -410,21 +448,21 @@ describe('standard model', () => {
     });
 
     it('Successfully creates first account on tables from post', (done) => {
-      standard.create(testAccount1.Item, '1').then((data) => {
+      standard.create(dbData.testAccount1.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
 
     it('Successfully creates second account on autocreated table', (done) => {
-      standard.create(testAccount2.Item, '1').then((data) => {
+      standard.create(dbData.testAccount2.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
     });
 
     it('removes autocreated test table', (done) => {
-      standard.deleteTable({TableName: testModel.tableName}).then((data) => {
+      standard.deleteTable({TableName: dbData.testModel.tableName}).then((data) => {
         expect(data).to.be.an.object;
         done();
       });

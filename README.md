@@ -31,11 +31,22 @@ let dynamoConfig = {
 
 Add an instance of the model where the `autoCreate` flag is used to determine if calls to non-existant tables should automatically create the table from the model
 
+Use `indexes` to define the hash key and global secondary indexes as desired.
+
+The optional index key `projectionType` can specify a projection of type 'ALL', 'KEYS_ONLY' or 'INCLUDE'.  Please note that 'INCLUDE' must also include the `nonKeyAttributes` array value as well. 
+
+Both `projectionType` and `nonKeyAttributes` are optional values and the projection type will default to 'ALL' in their absence.
+
+
 ```javascript
 model.add({
   name: 'roles',
   version: 1, 
   autoCreate: true,
+  indexes: [
+    { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age']}
+  ],
   schema: {
     id: Joi.string(),
     name: Joi.string(),
