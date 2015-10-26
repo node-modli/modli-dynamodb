@@ -303,10 +303,10 @@ export default class {
           if (err) {
             reject(err);
           } else {
-            const sanitize = this.sanitize;
+            const cachedThis = this;
             returnValue = [];
             _.each(data.Items, function(row) {
-              returnValue.push(sanitize(row));
+              returnValue.push(cachedThis.sanitize(row));
             });
             resolve(returnValue);
           }

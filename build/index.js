@@ -375,10 +375,10 @@ var _default = (function () {
               reject(err);
             } else {
               (function () {
-                var sanitize = _this8.sanitize;
+                var cachedThis = _this8;
                 returnValue = [];
                 _.each(data.Items, function (row) {
-                  returnValue.push(sanitize(row));
+                  returnValue.push(cachedThis.sanitize(row));
                 });
                 resolve(returnValue);
               })();
