@@ -13,7 +13,7 @@ export default class {
   constructor(config) {
     // AWS.config.update(config);
     this.schemas = {};
-    const dynDb = new AWS.DynamoDB(config);    
+    const dynDb = new AWS.DynamoDB(config);
     this.ddb = new DOC.DynamoDB(dynDb);
   }
 
