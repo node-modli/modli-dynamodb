@@ -27,9 +27,9 @@ var _default = (function () {
   function _default(config) {
     _classCallCheck(this, _default);
 
-    AWS.config.update(config);
     this.schemas = {};
-    this.ddb = new DOC.DynamoDB();
+    var dynDb = new AWS.DynamoDB(config);
+    this.ddb = new DOC.DynamoDB(dynDb);
   }
 
   /**
