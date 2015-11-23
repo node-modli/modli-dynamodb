@@ -197,7 +197,7 @@ var _default = (function () {
       newTable.Table.TableName = this.schemas[version].tableName;
       _.each(this.schemas[version].indexes, function (row) {
         newTable.Table.AttributeDefinitions.push(_this3.generateDefinition(row));
-        if (row.keytype === 'hash') {
+        if (row.keytype === 'hash' || row.keytype === 'range') {
           newTable.Table.KeySchema.push(_this3.generateKey(row));
         } else if (row.keytype === 'secondary') {
           newTable.Table.GlobalSecondaryIndexes.push(_this3.generateSecondaryIndex(row));
