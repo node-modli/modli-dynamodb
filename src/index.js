@@ -154,7 +154,7 @@ export default class {
     newTable.Table.TableName = this.schemas[version].tableName;
     _.each(this.schemas[version].indexes, (row) => {
       newTable.Table.AttributeDefinitions.push(this.generateDefinition(row));
-      if (row.keytype === 'hash') {
+      if (row.keytype === 'hash' || row.keytype === 'range') {
         newTable.Table.KeySchema.push(this.generateKey(row));
       } else if (row.keytype === 'secondary') {
         newTable.Table.GlobalSecondaryIndexes.push(this.generateSecondaryIndex(row));
