@@ -468,7 +468,7 @@ var _default = (function () {
             Key: {}
           };
           // Allows for HASH and possible RANGE key
-          _.each(keys, function (key) {
+          keys.forEach(function (key) {
             params.Key[key] = obj[key];
           });
           _this10.ddb.getItem(params, function (err, data) {
@@ -502,7 +502,7 @@ var _default = (function () {
         _helpers.helpers.checkCreateTable(_this11, paramVersion).then(function () {
           var keys = Object.keys(hashObject);
           // Allows for HASH and possible RANGE key
-          _.each(keys, function (key) {
+          keys.forEach(function (key) {
             if (updatedValuesArray[key]) {
               delete updatedValuesArray[key];
             }
@@ -527,7 +527,7 @@ var _default = (function () {
                 ReturnItemCollectionMetrics: 'NONE'
               };
               // Allows for HASH and possible RANGE key
-              _.each(keys, function (key) {
+              keys.forEach(function (key) {
                 params.Key[key] = hashObject[key];
               });
 
@@ -578,7 +578,7 @@ var _default = (function () {
             Key: {}
           };
           // Allows for HASH and possible RANGE key
-          _.each(keys, function (key) {
+          keys.forEach(function (key) {
             params.Key[key] = hashObject[key];
           });
 

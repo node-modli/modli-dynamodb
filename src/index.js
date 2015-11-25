@@ -381,7 +381,7 @@ export default class {
           Key: {}
         };
         // Allows for HASH and possible RANGE key
-        _.each(keys, (key) => {
+        keys.forEach((key) => {
           params.Key[key] = obj[key];
         });
         this.ddb.getItem(params, (err, data) => {
@@ -410,7 +410,7 @@ export default class {
       helpers.checkCreateTable(this, paramVersion).then(() => {
         const keys = Object.keys(hashObject);
         // Allows for HASH and possible RANGE key
-        _.each(keys, (key) => {
+        keys.forEach((key) => {
           if (updatedValuesArray[key]) {
             delete updatedValuesArray[key];
           }
@@ -436,7 +436,7 @@ export default class {
             ReturnItemCollectionMetrics: 'NONE'
           };
           // Allows for HASH and possible RANGE key
-          _.each(keys, (key) => {
+          keys.forEach((key) => {
             params.Key[key] = hashObject[key];
           });
 
@@ -480,7 +480,7 @@ export default class {
           Key: {}
         };
         // Allows for HASH and possible RANGE key
-        _.each(keys, (key) => {
+        keys.forEach((key) => {
           params.Key[key] = hashObject[key];
         });
 
