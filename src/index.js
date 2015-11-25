@@ -375,12 +375,15 @@ export default class {
       helpers.checkCreateTable(this, paramVersion).then(() => {
         const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
         const table = this.schemas[version].tableName;
-        const key = Object.keys(obj)[0];
+        const keys = Object.keys(obj);
         let params = {
           TableName: table,
           Key: {}
         };
-        params.Key[key] = obj[key];
+        // Allows for HASH and possible RANGE key
+        _.each(keys, (key) => {
+          params.Key[key] = obj[key];
+        });
         this.ddb.getItem(params, (err, data) => {
           if (err) {
             reject(new Error(err));
@@ -405,9 +408,12 @@ export default class {
     // TODO : Implement validation
     return new Promise((resolve, reject) => {
       helpers.checkCreateTable(this, paramVersion).then(() => {
-        const hashkey = Object.keys(hashObject)[0];
-        if (updatedValuesArray[hashkey]) {
-          delete updatedValuesArray[hashkey];
+        const keys = Object.keys(hashObject);
+        // Allows for HASH and possible RANGE key
+        _.each(keys, (key) => {
+          if (updatedValuesArray[key]) {
+            delete updatedValuesArray[key];
+          }
         }
         const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
         const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
@@ -415,7 +421,6 @@ export default class {
           reject(new Error(validationErrors));
         } else {
           const table = this.schemas[version].tableName;
-          const key = Object.keys(hashObject)[0];
 
           let params = {
             TableName: table,
@@ -430,7 +435,10 @@ export default class {
             ReturnConsumedCapacity: 'NONE',
             ReturnItemCollectionMetrics: 'NONE'
           };
-          params.Key[key] = hashObject[key];
+          // Allows for HASH and possible RANGE key
+          _.each(keys, (key) => {
+            params.Key[key] = hashObject[key];
+          });
 
           let i = 0;
           Object.keys(updatedValuesArray).forEach((valueKey) => {
@@ -464,14 +472,18 @@ export default class {
     return new Promise((resolve, reject) => {
       helpers.checkCreateTable(this, paramVersion).then(() => {
         const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-        const key = Object.keys(hashObject)[0];
+        const keys = Object.keys(hashObject);
         const table = this.schemas[version].tableName;
 
         let params = {
           TableName: table,
           Key: {}
         };
-        params.Key[key] = hashObject[key];
+        // Allows for HASH and possible RANGE key
+        _.each(keys, (key) => {
+          params.Key[key] = hashObject[key];
+        });
+
         this.ddb.deleteItem(params, (err, data) => {
           if (err) {
             reject(new Error(err));
