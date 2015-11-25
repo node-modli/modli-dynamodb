@@ -462,12 +462,15 @@ var _default = (function () {
         _helpers.helpers.checkCreateTable(_this10, paramVersion).then(function () {
           var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
           var table = _this10.schemas[version].tableName;
-          var key = Object.keys(obj)[0];
+          var keys = Object.keys(obj);
           var params = {
             TableName: table,
             Key: {}
           };
-          params.Key[key] = obj[key];
+          // Allows for HASH and possible RANGE key
+          _.each(keys, function (key) {
+            params.Key[key] = obj[key];
+          });
           _this10.ddb.getItem(params, function (err, data) {
             if (err) {
               reject(new Error(err));
@@ -497,10 +500,13 @@ var _default = (function () {
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
         _helpers.helpers.checkCreateTable(_this11, paramVersion).then(function () {
-          var hashkey = Object.keys(hashObject)[0];
-          if (updatedValuesArray[hashkey]) {
-            delete updatedValuesArray[hashkey];
-          }
+          var keys = Object.keys(hashObject);
+          // Allows for HASH and possible RANGE key
+          _.each(keys, function (key) {
+            if (updatedValuesArray[key]) {
+              delete updatedValuesArray[key];
+            }
+          });
           var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
           var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
           if (validationErrors) {
@@ -508,7 +514,6 @@ var _default = (function () {
           } else {
             (function () {
               var table = _this11.schemas[version].tableName;
-              var key = Object.keys(hashObject)[0];
 
               var params = {
                 TableName: table,
@@ -521,7 +526,10 @@ var _default = (function () {
                 ReturnConsumedCapacity: 'NONE',
                 ReturnItemCollectionMetrics: 'NONE'
               };
-              params.Key[key] = hashObject[key];
+              // Allows for HASH and possible RANGE key
+              _.each(keys, function (key) {
+                params.Key[key] = hashObject[key];
+              });
 
               var i = 0;
               Object.keys(updatedValuesArray).forEach(function (valueKey) {
@@ -562,14 +570,18 @@ var _default = (function () {
       return new Promise(function (resolve, reject) {
         _helpers.helpers.checkCreateTable(_this12, paramVersion).then(function () {
           var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
-          var key = Object.keys(hashObject)[0];
+          var keys = Object.keys(hashObject);
           var table = _this12.schemas[version].tableName;
 
           var params = {
             TableName: table,
             Key: {}
           };
-          params.Key[key] = hashObject[key];
+          // Allows for HASH and possible RANGE key
+          _.each(keys, function (key) {
+            params.Key[key] = hashObject[key];
+          });
+
           _this12.ddb.deleteItem(params, function (err, data) {
             if (err) {
               reject(new Error(err));

@@ -414,7 +414,7 @@ export default class {
           if (updatedValuesArray[key]) {
             delete updatedValuesArray[key];
           }
-        }
+        });
         const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
         const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
         if (validationErrors) {
