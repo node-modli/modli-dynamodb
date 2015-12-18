@@ -66,8 +66,7 @@ var _default = (function () {
   }, {
     key: 'generateSecondaryIndex',
     value: function generateSecondaryIndex(params) {
-      var newIndex = Object.create({});
-      newIndex = _.clone(_dynamoData.tables.secondaryIndex, true);
+      var newIndex = _.clone(_dynamoData.tables.secondaryIndex, true);
       if (params.projectionType) {
         newIndex.Projection.ProjectionType = params.projectionType;
         if (params.nonKeyAttributes) {
@@ -135,7 +134,7 @@ var _default = (function () {
           } else {
             var createParams = {
               TableName: _this.schemas[version].tableName,
-              ReturnValues: 'ALL_OLD',
+              ReturnValues: 'NONE',
               Item: body
             };
             _this.ddb.putItem(createParams, function (err) {
@@ -151,7 +150,7 @@ var _default = (function () {
     }
 
     /**
-     * Calls create table using explcit table creation parameters
+     * Calls create table using explicit table creation parameters
      * @memberof dynamodb
      * @param {Object} body Contents to create table
      * @returns {Object} promise
@@ -370,15 +369,14 @@ var _default = (function () {
             }
           };
           _this8.ddb.query(params, function (err, data) {
-            var returnValue = null;
             if (err) {
               reject(err);
             } else {
               (function () {
-                var cachedThis = _this8;
-                returnValue = [];
+                var returnValue = [];
+                var sanitize = _this8.sanitize;
                 _.each(data.Items, function (row) {
-                  returnValue.push(cachedThis.sanitize(row));
+                  returnValue.push(sanitize(row));
                 });
                 resolve(returnValue);
               })();

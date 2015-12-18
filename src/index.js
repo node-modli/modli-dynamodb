@@ -43,8 +43,7 @@ export default class {
    * @returns {Object} New Index
    */
   generateSecondaryIndex(params) {
-    let newIndex = Object.create({});
-    newIndex = _.clone(tables.secondaryIndex, true);
+    let newIndex = _.clone(tables.secondaryIndex, true);
     if (params.projectionType) {
       newIndex.Projection.ProjectionType = params.projectionType;
       if (params.nonKeyAttributes) {
@@ -102,7 +101,7 @@ export default class {
         } else {
           const createParams = {
             TableName: this.schemas[version].tableName,
-            ReturnValues: 'ALL_OLD',
+            ReturnValues: 'NONE',
             Item: body
           };
           this.ddb.putItem(createParams, function(err) {
@@ -118,7 +117,7 @@ export default class {
   }
 
   /**
-   * Calls create table using explcit table creation parameters
+   * Calls create table using explicit table creation parameters
    * @memberof dynamodb
    * @param {Object} body Contents to create table
    * @returns {Object} promise
@@ -299,14 +298,13 @@ export default class {
           }
         };
         this.ddb.query(params, (err, data) => {
-          let returnValue = null;
           if (err) {
             reject(err);
           } else {
-            const cachedThis = this;
-            returnValue = [];
+            let returnValue = [];
+            const sanitize = this.sanitize;
             _.each(data.Items, function(row) {
-              returnValue.push(cachedThis.sanitize(row));
+              returnValue.push(sanitize(row));
             });
             resolve(returnValue);
           }
