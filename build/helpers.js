@@ -17,9 +17,7 @@ var comparators = [{ 'eq': '=' }, { 'gt': '>' }, { 'lt': '<' }, { 'lte': '<=' },
 
 var functions = ['attribute_type', 'begins_with', 'contains'];
 
-helpers.checkCreateTable = function (modelObj) {
-  var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
-
+helpers.checkCreateTable = function (modelObj, paramVersion) {
   return new Promise(function (resolve, reject) {
     var version = paramVersion === false ? modelObj.defaultVersion : paramVersion;
 

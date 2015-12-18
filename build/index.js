@@ -70,6 +70,7 @@ var _default = (function () {
       if (params.projectionType) {
         newIndex.Projection.ProjectionType = params.projectionType;
         if (params.nonKeyAttributes) {
+          /* istanbul ignore else */
           if (params.projectionType === 'INCLUDE') {
             newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
           }
@@ -163,6 +164,7 @@ var _default = (function () {
       return new Promise(function (resolve, reject) {
         _this2.ddb.listTables({}, function (err, foundTables) {
           var tableList = undefined;
+          /* istanbul ignore next */
           tableList = foundTables || { TableNames: [] };
           if (_.contains(tableList.TableNames, params.TableName)) {
             resolve({ TableName: params.TableName, existed: true });

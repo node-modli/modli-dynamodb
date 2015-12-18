@@ -234,7 +234,7 @@ describe('dynamo numeric tests', () => {
   });
   describe('read', () => {
     it('reads by numeric hash', (done) => {
-      numeric.read({'id': dbData.numericAccount.Item.id}).then((data) => {
+      numeric.read({'id': dbData.numericAccount.Item.id}, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -411,7 +411,7 @@ describe('standard model', () => {
   });
   describe('get in array', () => {
     it('fetches items by array', (done) => {
-      standard.getItemsInArray('id', [dbData.testAccount1.Item.id, dbData.testAccount2.Item.id]).then((data) => {
+      standard.getItemsInArray('id', [dbData.testAccount1.Item.id, dbData.testAccount2.Item.id], '1').then((data) => {
         expect(data).to.be.an.array;
         done();
       });
@@ -419,7 +419,7 @@ describe('standard model', () => {
   });
   describe('update', () => {
     it('updates first account', (done) => {
-      standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com'}).then((data) => {
+      standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com'}, '1').then((data) => {
         expect(data.email).to.be.equal('test@test.com');
         done();
       });
@@ -451,7 +451,7 @@ describe('standard model', () => {
   });
   describe('delete', () => {
     it('deletes first account', (done) => {
-      standard.delete({id: dbData.testAccount1.Item.id}).then((data) => {
+      standard.delete({id: dbData.testAccount1.Item.id}, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });

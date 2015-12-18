@@ -47,6 +47,7 @@ export default class {
     if (params.projectionType) {
       newIndex.Projection.ProjectionType = params.projectionType;
       if (params.nonKeyAttributes) {
+        /* istanbul ignore else */
         if (params.projectionType === 'INCLUDE') {
           newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
         }
@@ -126,6 +127,7 @@ export default class {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, foundTables) => {
         let tableList;
+        /* istanbul ignore next */
         tableList = foundTables || { TableNames: [] };
         if (_.contains(tableList.TableNames, params.TableName)) {
           resolve({TableName: params.TableName, existed: true});
