@@ -358,22 +358,27 @@ var _default = (function () {
     }
 
     /**
-     * Reads from the database by secondary index
+     * Reads from the database by secondary index with pagination capabilities
      * @memberof dynamodb
      * @param {Object} obj The object to search by secondary index on
      *   @property {string} hash/index - Example { authId: '1234'}
+     * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
      * @returns {Object} promise
      */
   }, {
-    key: 'getItemById',
-    value: function getItemById(obj) {
+    key: 'readPaginate',
+    value: function readPaginate(obj) {
       var _this8 = this;
 
-      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this8, paramVersion).then(function () {
-          var version = paramVersion === false ? _this8.defaultVersion : paramVersion;
+        var opts = {};
+        opts.version = options.version || false;
+        opts.limit = options.limit || false;
+        opts.lastKey = options.lastKey || false;
+        _helpers.helpers.checkCreateTable(_this8, opts.version).then(function () {
+          var version = opts.version === false ? _this8.defaultVersion : opts.version;
           var table = _this8.schemas[version].tableName;
           var key = Object.keys(obj)[0];
           var params = {
@@ -389,8 +394,55 @@ var _default = (function () {
               reject(err);
             } else {
               (function () {
+                var response = _.cloneDeep(data);
                 var returnValue = [];
                 var sanitize = _this8.sanitize;
+                _.each(response.Items, function (row) {
+                  returnValue.push(sanitize(row));
+                });
+                response.Items = returnValue;
+                resolve(response);
+              })();
+            }
+          });
+        })['catch'](reject);
+      });
+    }
+
+    /**
+     * Reads from the database by secondary index
+     * @memberof dynamodb
+     * @param {Object} obj The object to search by secondary index on
+     *   @property {string} hash/index - Example { authId: '1234'}
+     * @returns {Object} promise
+     */
+  }, {
+    key: 'getItemById',
+    value: function getItemById(obj) {
+      var _this9 = this;
+
+      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+
+      return new Promise(function (resolve, reject) {
+        _helpers.helpers.checkCreateTable(_this9, paramVersion).then(function () {
+          var version = paramVersion === false ? _this9.defaultVersion : paramVersion;
+          var table = _this9.schemas[version].tableName;
+          var key = Object.keys(obj)[0];
+          var params = {
+            TableName: table,
+            IndexName: key + '-index',
+            KeyConditionExpression: key + ' = :hk_val',
+            ExpressionAttributeValues: {
+              ':hk_val': obj[key]
+            }
+          };
+          _this9.ddb.query(params, function (err, data) {
+            if (err) {
+              reject(err);
+            } else {
+              (function () {
+                var returnValue = [];
+                var sanitize = _this9.sanitize;
                 _.each(data.Items, function (row) {
                   returnValue.push(sanitize(row));
                 });
@@ -412,20 +464,20 @@ var _default = (function () {
   }, {
     key: 'getItemsInArray',
     value: function getItemsInArray(hash, array) {
-      var _this9 = this;
+      var _this10 = this;
 
       var paramVersion = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
 
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this9, paramVersion).then(function () {
-          var version = paramVersion === false ? _this9.defaultVersion : paramVersion;
+        _helpers.helpers.checkCreateTable(_this10, paramVersion).then(function () {
+          var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
           if (!array) {
             reject(new Error('Array empty'));
           }
           if (array.length < 1) {
             reject(new Error('Array contained no values'));
           }
-          var table = _this9.schemas[version].tableName;
+          var table = _this10.schemas[version].tableName;
           var params = {
             RequestItems: {}
           };
@@ -440,13 +492,13 @@ var _default = (function () {
             params.RequestItems[table].Keys.push(newObj);
           });
 
-          _this9.ddb.batchGetItem(params, function (err, data) {
+          _this10.ddb.batchGetItem(params, function (err, data) {
             if (err) {
               reject(new Error(err));
             } else {
               (function () {
                 var returnArray = [];
-                var sanitize = _this9.sanitize;
+                var sanitize = _this10.sanitize;
                 _.each(data, function (row) {
                   returnArray.push(sanitize(row));
                 });
@@ -468,14 +520,14 @@ var _default = (function () {
   }, {
     key: 'getItemByHash',
     value: function getItemByHash(obj) {
-      var _this10 = this;
+      var _this11 = this;
 
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this10, paramVersion).then(function () {
-          var version = paramVersion === false ? _this10.defaultVersion : paramVersion;
-          var table = _this10.schemas[version].tableName;
+        _helpers.helpers.checkCreateTable(_this11, paramVersion).then(function () {
+          var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
+          var table = _this11.schemas[version].tableName;
           var keys = Object.keys(obj);
           var params = {
             TableName: table,
@@ -485,11 +537,11 @@ var _default = (function () {
           keys.forEach(function (key) {
             params.Key[key] = obj[key];
           });
-          _this10.ddb.getItem(params, function (err, data) {
+          _this11.ddb.getItem(params, function (err, data) {
             if (err) {
               reject(new Error(err));
             } else {
-              resolve(_this10.sanitize(data.Item));
+              resolve(_this11.sanitize(data.Item));
             }
           });
         })['catch'](reject);
@@ -507,13 +559,13 @@ var _default = (function () {
   }, {
     key: 'update',
     value: function update(hashObject, updatedValuesArray) {
-      var _this11 = this;
+      var _this12 = this;
 
       var paramVersion = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
 
       // TODO : Implement validation
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this11, paramVersion).then(function () {
+        _helpers.helpers.checkCreateTable(_this12, paramVersion).then(function () {
           var keys = Object.keys(hashObject);
           // Allows for HASH and possible RANGE key
           keys.forEach(function (key) {
@@ -521,13 +573,13 @@ var _default = (function () {
               delete updatedValuesArray[key];
             }
           });
-          var version = paramVersion === false ? _this11.defaultVersion : paramVersion;
-          var validationErrors = _this11.validate(updatedValuesArray, Object.keys(_this11.schemas)[0]);
+          var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
+          var validationErrors = _this12.validate(updatedValuesArray, Object.keys(_this12.schemas)[0]);
           if (validationErrors) {
             reject(new Error(validationErrors));
           } else {
             (function () {
-              var table = _this11.schemas[version].tableName;
+              var table = _this12.schemas[version].tableName;
 
               var params = {
                 TableName: table,
@@ -554,7 +606,7 @@ var _default = (function () {
                   params.UpdateExpression += ', #param' + i + ' = :val' + i;
                 }
               });
-              _this11.ddb.updateItem(params, function (err, data) {
+              _this12.ddb.updateItem(params, function (err, data) {
                 if (err) {
                   reject(new Error(err));
                 } else {
@@ -577,15 +629,15 @@ var _default = (function () {
   }, {
     key: 'delete',
     value: function _delete(hashObject) {
-      var _this12 = this;
+      var _this13 = this;
 
       var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this12, paramVersion).then(function () {
-          var version = paramVersion === false ? _this12.defaultVersion : paramVersion;
+        _helpers.helpers.checkCreateTable(_this13, paramVersion).then(function () {
+          var version = paramVersion === false ? _this13.defaultVersion : paramVersion;
           var keys = Object.keys(hashObject);
-          var table = _this12.schemas[version].tableName;
+          var table = _this13.schemas[version].tableName;
 
           var params = {
             TableName: table,
@@ -596,7 +648,7 @@ var _default = (function () {
             params.Key[key] = hashObject[key];
           });
 
-          _this12.ddb.deleteItem(params, function (err, data) {
+          _this13.ddb.deleteItem(params, function (err, data) {
             if (err) {
               reject(new Error(err));
             } else {

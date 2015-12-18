@@ -293,6 +293,50 @@ export default class {
   }
 
   /**
+   * Reads from the database by secondary index with pagination capabilities
+   * @memberof dynamodb
+   * @param {Object} obj The object to search by secondary index on
+   *   @property {string} hash/index - Example { authId: '1234'}
+   * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
+   * @returns {Object} promise
+   */
+  readPaginate(obj, options = {}) {
+    return new Promise((resolve, reject) => {
+      let opts = {};
+      opts.version = options.version || false;
+      opts.limit = options.limit || false;
+      opts.lastKey = options.lastKey || false;
+      helpers.checkCreateTable(this, opts.version).then(() => {
+        const version = (opts.version === false) ? this.defaultVersion : opts.version;
+        const table = this.schemas[version].tableName;
+        const key = Object.keys(obj)[0];
+        const params = {
+          TableName: table,
+          IndexName: key + '-index',
+          KeyConditionExpression: key + ' = :hk_val',
+          ExpressionAttributeValues: {
+            ':hk_val': obj[key]
+          }
+        };
+        this.ddb.query(params, (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            let response = _.cloneDeep(data);
+            let returnValue = [];
+            const sanitize = this.sanitize;
+            _.each(response.Items, function(row) {
+              returnValue.push(sanitize(row));
+            });
+            response.Items = returnValue;
+            resolve(response);
+          }
+        });
+      }).catch(reject);
+    });
+  }
+
+  /**
    * Reads from the database by secondary index
    * @memberof dynamodb
    * @param {Object} obj The object to search by secondary index on

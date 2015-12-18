@@ -264,6 +264,33 @@ describe('dynamo numeric tests', () => {
       });
     });
   });
+  describe('readPaginate', () => {
+    let lastKey;
+    before((done) => {
+      numeric.scan(undefined, {limit: 1}).then((data) => {
+        lastKey = JSON.stringify(data.LastEvaluatedKey);
+        done();
+      });
+    });
+    it('reads by numeric secondary with limit', (done) => {
+      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {version: 1, limit: 1}).then((data) => {
+        expect(data.Items.length).to.be.above(0);
+        done();
+      });
+    });
+    it('reads by numeric secondary with limit and lastKey', (done) => {
+      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {limit: 1, lastKey}).then((data) => {
+        expect(data.Items.length).to.be.above(0);
+        done();
+      });
+    });
+    it('reads an invalid hash', (done) => {
+      numeric.readPaginate({junk: 'trash'}).then(done).catch((err) => {
+        expect(err).to.be.an.instanceof(Error);
+        done();
+      });
+    });
+  });
 });
 
 describe('standard model', () => {
