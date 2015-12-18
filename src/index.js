@@ -200,22 +200,38 @@ export default class {
   /**
    * Performs a full unfiltered scan
    * @memberof dynamodb
+   * @param {Object} filterObject Filter criteria
+   * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
    * @returns {Object} promise
    */
-  scan(filterObject, paramVersion = false) {
+  scan(filterObject, options = {}) {
     return new Promise((resolve, reject) => {
-      helpers.checkCreateTable(this, paramVersion).then(() => {
-        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+      let opts = {};
+      opts.version = options.version || false;
+      opts.limit = options.limit || false;
+      opts.lastKey = options.lastKey || false;
+      helpers.checkCreateTable(this, opts.version).then(() => {
+        const version = (opts.version === false) ? this.defaultVersion : opts.version;
         const table = this.schemas[version].tableName;
         let scanObject = {'TableName': table};
         if (filterObject) {
           scanObject = this.createFilter(table, filterObject);
         }
+        if (opts.limit) {
+          scanObject.Limit = opts.limit;
+        }
+        if (opts.lastKey) {
+          try {
+            scanObject.ExclusiveStartKey = JSON.parse(opts.lastKey);
+          } catch (err) {
+            reject(err);
+          }
+        }
         this.ddb.scan(scanObject, (err, res) => {
           if (err) {
             reject(err);
           } else {
-            resolve(res.Items);
+            resolve(res);
           }
         });
       });

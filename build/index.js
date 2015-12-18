@@ -249,6 +249,8 @@ var _default = (function () {
     /**
      * Performs a full unfiltered scan
      * @memberof dynamodb
+     * @param {Object} filterObject Filter criteria
+     * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
      * @returns {Object} promise
      */
   }, {
@@ -256,21 +258,35 @@ var _default = (function () {
     value: function scan(filterObject) {
       var _this5 = this;
 
-      var paramVersion = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+      var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
       return new Promise(function (resolve, reject) {
-        _helpers.helpers.checkCreateTable(_this5, paramVersion).then(function () {
-          var version = paramVersion === false ? _this5.defaultVersion : paramVersion;
+        var opts = {};
+        opts.version = options.version || false;
+        opts.limit = options.limit || false;
+        opts.lastKey = options.lastKey || false;
+        _helpers.helpers.checkCreateTable(_this5, opts.version).then(function () {
+          var version = opts.version === false ? _this5.defaultVersion : opts.version;
           var table = _this5.schemas[version].tableName;
           var scanObject = { 'TableName': table };
           if (filterObject) {
             scanObject = _this5.createFilter(table, filterObject);
           }
+          if (opts.limit) {
+            scanObject.Limit = opts.limit;
+          }
+          if (opts.lastKey) {
+            try {
+              scanObject.ExclusiveStartKey = JSON.parse(opts.lastKey);
+            } catch (err) {
+              reject(err);
+            }
+          }
           _this5.ddb.scan(scanObject, function (err, res) {
             if (err) {
               reject(err);
             } else {
-              resolve(res.Items);
+              resolve(res);
             }
           });
         });
