@@ -1,4 +1,4 @@
-[![wercker status](https://app.wercker.com/status/76a8e0a57f5bbb26274c21e097eda3d1/s/master "wercker status")](https://app.wercker.com/project/bykey/76a8e0a57f5bbb26274c21e097eda3d1)
+[![Circle CI](https://circleci.com/gh/node-modli/modli-dynamodb.svg?style=svg)](https://circleci.com/gh/node-modli/modli-dynamodb)
 [![Code Climate](https://codeclimate.com/github/node-modli/modli-dynamodb/badges/gpa.svg)](https://codeclimate.com/github/node-modli/modli-dynamodb)
 [![Test Coverage](https://codeclimate.com/github/node-modli/modli-dynamodb/badges/coverage.svg)](https://codeclimate.com/github/node-modli/modli-dynamodb/coverage)
 
@@ -29,11 +29,11 @@ let dynamoConfig = {
 };
 ```
 
-Add an instance of the model where the `autoCreate` flag is used to determine if calls to non-existant tables should automatically create the table from the model
+Add an instance of the model where the `autoCreate` flag is used to determine if calls to non-existant tables should automatically create the table from the model.
 
-Use `indexes` to define the hash key and global secondary indexes as desired.
+Use `indexes` to define a hash key, range key or global secondary indexes as desired.
 
-The optional index key `projectionType` can specify a projection of type 'ALL', 'KEYS_ONLY' or 'INCLUDE'.  Please note that 'INCLUDE' must also include the `nonKeyAttributes` array value as well. 
+The optional index key `projectionType` can specify a projection type of 'ALL', 'KEYS_ONLY' or 'INCLUDE'.  Please note that the use of 'INCLUDE' also requires the index key `nonKeyAttributes` as an array of keys to include in the projection.
 
 Both `projectionType` and `nonKeyAttributes` are optional values and the projection type will default to 'ALL' in their absence.
 
@@ -41,7 +41,7 @@ Both `projectionType` and `nonKeyAttributes` are optional values and the project
 ```javascript
 model.add({
   name: 'roles',
-  version: 1, 
+  version: 1,
   autoCreate: true,
   indexes: [
     { keytype: 'hash', value: 'id', type: 'N'},
@@ -60,7 +60,7 @@ Add the adapter with the previously defined config object structure:
 ```javascript
 adapter.add({
   name: 'dynamoAdapter',
-  source: DynamoAdapter,
+  source: dynamodb,
   config: dynamoConfig
 });
 ```
@@ -85,7 +85,7 @@ testDynamo.list()
 
 ### `scan`
 
-Perform a full unfiltered scan of a table with an optional dynamo scan-level filter that doesn't rely on secondary indexes.  Optional filters are constructed in a way that correlates to dynamo filter conditionals
+Perform a full unfiltered scan of a table with an optional dynamo scan-level filter that doesn't rely on secondary indexes.  Optional filters are constructed in a way that correlates to dynamo filter conditionals.  In addition, optionally pass a `limit` and `lastKey`, which could be used to support pagination.
 
 ```javascript
 testDynamo.scan()
@@ -112,6 +112,13 @@ testDynamo.scan({accounts: {contains: 'someuser'}, email: {eq: 'me@email.com'}})
   .then(/*...*/)
   .catch(/*...*/);
 
+testDynamo.scan(undefined, {limit: 10})
+  .then(/*...*/)
+  .catch(/*...*/);
+
+testDynamo.scan({age: { between: [18, 26]}}, {limit: 25, lastKey: 'somekey'})
+  .then(/*...*/)
+  .catch(/*...*/);
 
 ```
 
@@ -171,12 +178,28 @@ testDynamo.read({SOMEINDEX: SomeOtherValue})
   .catch(/*...*/);
 ```
 
+### `readPaginate`
+
+Performs a read on a table expecting a global secondary index that accepts a `limit` and `lastKey`, which could be used to support pagination.
+
+```javascript
+testDynamo.readPaginate({SOMEINDEX: SomeValue}, {limit: 10})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+```javascript
+testDynamo.readPaginate({SOMEINDEX: SomeValue}, {limit: 25, lastKey: 'SomeKey'})
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
 ### `getItemByHash`
 
 Performs a read on a table expecting a HASH / Value pair
 
 ```javascript
-testDynamo.getItemById({SOMEHASH: SomeValue})
+testDynamo.getItemByHash({SOMEHASH: SomeValue})
   .then(/*...*/)
   .catch(/*...*/);
 ```
