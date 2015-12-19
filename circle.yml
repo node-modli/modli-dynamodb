@@ -2,7 +2,7 @@ machine:
   services:
     - docker
   node:
-    version: 4.2.1
+    version: 4.2.3
 
 dependencies:
   cache_directories:
@@ -23,14 +23,11 @@ dependencies:
         mkdir -p ~/docker &&
         docker save technologyadvice/node-build:4 > ~/docker/ta_node_4.tar
       fi
-    - lab ci-install
+    - lab install
 
 test:
   override:
-    - lab ci
-  post:
-    # Switch .ssh out of Docker/root ownership
-    - sudo chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+    - lab test
 
 general:
   artifacts:
