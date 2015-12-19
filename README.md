@@ -13,6 +13,10 @@ datasource for integration with [Modli](https://github.com/node-modli).
 npm install modli-dynamodb --save
 ```
 
+## Working Locally
+
+**IMPORTANT:** For testing (with linked services) to run correctly you must have [docker](http://www.docker.com) and DevLab `npm install devlab -g` installed.
+
 ## Usage
 
 Configure your adapter and model
@@ -254,46 +258,22 @@ testDynamo.extend('methodName', () => {
 })
 ```
 
-## Makefile and Scripts
+## DevLab and Scripts
 
-A `Makefile` is included for managing build and install tasks. The commands are
-then referenced in the `package.json` `scripts` if that is the preferred
-task method:
+The system utilizes DevLab for running tasks in containers. The below tasks will
+be executed in containers via `lab {task-name}`:
 
-* `all` (default) will run all build tasks
-* `start` will run the main script
-* `clean` will remove the `/node_modules` directories
+* `clean` will remove the `/node_modules`, `/build` and `/coverage` directories
+* `install` will install dependencies
+* `lint` will lint all files in `/src` and `/test`
 * `build` will transpile ES2015 code in `/src` to `/build`
-* `test` will run all spec files in `/test/src`
-* `test-cover` will run code coverage on all tests
-* `lint` will lint all files in `/src`
+* `mocha` will run all spec files in `/test/src` recursively
+* `test` will run both `lint` and `cover`
+* `cover` will run code coverage on all tests in `/test/src` recursively
 
 ## Testing
 
-Running `make test` will run the full test suite. Since adapters require a data
-source if one is not configured the tests will fail. To counter this tests are
-able to be broken up.
-
-**Test Inidividual File**
-
-An individual spec can be run by specifying the `FILE`. This is convenient when
-working on an individual adapter.
-
-```
-make test FILE=some.spec.js
-```
-
-The `FILE` is relative to the `test/src/` directory.
-
-**Deploys**
-
-For deploying releases, the `deploy TAG={VERSION}` can be used where `VERSION` can be:
-
-```
-<newversion> | major | minor | patch | premajor
-```
-
-Both `make {COMMAND}` and `npm run {COMMAND}` work for any of the above commands.
+Running `lab mocha` will run the tests.
 
 ## License
 

@@ -21,7 +21,6 @@
     "build"
   ],
   "scripts": {
-    "start": "node test/index.js",
     "clean": "rm -rf node_modules build coverage",
     "build": "babel ./src --out-dir ./build",
     "lint": "eslint ./src ./test --fix",
