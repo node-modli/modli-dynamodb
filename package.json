@@ -17,14 +17,18 @@
     "aws"
   ],
   "author": "TechnologyAdvice <devteam@technologyadvice.com>",
+  "files": [
+    "build"
+  ],
   "scripts": {
     "start": "node test/index.js",
-    "clean": "rm -rf ./node_modules",
+    "clean": "rm -rf node_modules build coverage",
     "build": "babel ./src --out-dir ./build",
     "lint": "eslint ./src ./test --fix",
     "mocha": "mocha --compilers js:babel/register ./test/src --recursive",
     "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src",
-    "test": "npm run lint && npm run cover"
+    "test": "npm run lint && npm run cover",
+    "prepublish": "lab test && lab build"
   },
   "license": "MIT",
   "devDependencies": {

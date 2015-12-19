@@ -7,8 +7,7 @@ before-task: |
   export MODLI_DYNAMODB_HOST=http://$DYNAMO_PORT_8000_TCP_ADDR:8000
 tasks:
   env: env
-  clean: |
-    rm -rf ./node_modules
+  clean: npm run clean
   install: npm install
   mocha: npm run mocha
   test: npm run test
