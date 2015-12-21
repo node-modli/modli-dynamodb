@@ -320,6 +320,16 @@ export default class {
             ':hk_val': obj[key]
           }
         };
+        if (opts.limit) {
+          params.Limit = opts.limit;
+        }
+        if (opts.lastKey) {
+          try {
+            params.ExclusiveStartKey = JSON.parse(opts.lastKey);
+          } catch (err) {
+            reject(err);
+          }
+        }
         this.ddb.query(params, (err, data) => {
           if (err) {
             reject(err);
