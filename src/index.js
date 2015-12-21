@@ -215,13 +215,12 @@ export default class {
       helpers.checkCreateTable(this, opts.version).then(() => {
         const version = (opts.version === false) ? this.defaultVersion : opts.version;
         const table = this.schemas[version].tableName;
-        let scanObject = {
-          'TableName': table,
-          'Limit': opts.limit
-        };
+        let scanObject = {'TableName': table};
         if (filterObject) {
           scanObject = this.createFilter(table, filterObject);
         }
+        // Set after createFilter() is called above
+        scanObject.Limit = opts.limit;
         if (opts.lastKey) {
           try {
             scanObject.ExclusiveStartKey = JSON.parse(opts.lastKey);
