@@ -43,11 +43,11 @@ export default class {
    * @returns {Object} New Index
    */
   generateSecondaryIndex(params) {
-    let newIndex = Object.create({});
-    newIndex = _.clone(tables.secondaryIndex, true);
+    let newIndex = _.clone(tables.secondaryIndex, true);
     if (params.projectionType) {
       newIndex.Projection.ProjectionType = params.projectionType;
       if (params.nonKeyAttributes) {
+        /* istanbul ignore else */
         if (params.projectionType === 'INCLUDE') {
           newIndex.Projection.NonKeyAttributes = params.nonKeyAttributes;
         }
@@ -102,7 +102,7 @@ export default class {
         } else {
           const createParams = {
             TableName: this.schemas[version].tableName,
-            ReturnValues: 'ALL_OLD',
+            ReturnValues: 'NONE',
             Item: body
           };
           this.ddb.putItem(createParams, function(err) {
@@ -118,7 +118,7 @@ export default class {
   }
 
   /**
-   * Calls create table using explcit table creation parameters
+   * Calls create table using explicit table creation parameters
    * @memberof dynamodb
    * @param {Object} body Contents to create table
    * @returns {Object} promise
@@ -127,6 +127,7 @@ export default class {
     return new Promise((resolve, reject) => {
       this.ddb.listTables({}, (err, foundTables) => {
         let tableList;
+        /* istanbul ignore next */
         tableList = foundTables || { TableNames: [] };
         if (_.contains(tableList.TableNames, params.TableName)) {
           resolve({TableName: params.TableName, existed: true});
@@ -201,22 +202,38 @@ export default class {
   /**
    * Performs a full unfiltered scan
    * @memberof dynamodb
+   * @param {Object} filterObject Filter criteria
+   * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
    * @returns {Object} promise
    */
-  scan(filterObject, paramVersion = false) {
+  scan(filterObject, options = {}) {
     return new Promise((resolve, reject) => {
-      helpers.checkCreateTable(this, paramVersion).then(() => {
-        const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+      let opts = {};
+      opts.version = options.version || false;
+      opts.limit = options.limit || false;
+      opts.lastKey = options.lastKey || false;
+      helpers.checkCreateTable(this, opts.version).then(() => {
+        const version = (opts.version === false) ? this.defaultVersion : opts.version;
         const table = this.schemas[version].tableName;
         let scanObject = {'TableName': table};
         if (filterObject) {
           scanObject = this.createFilter(table, filterObject);
         }
+        if (opts.limit) {
+          scanObject.Limit = opts.limit;
+        }
+        if (opts.lastKey) {
+          try {
+            scanObject.ExclusiveStartKey = JSON.parse(opts.lastKey);
+          } catch (err) {
+            reject(err);
+          }
+        }
         this.ddb.scan(scanObject, (err, res) => {
           if (err) {
             reject(err);
           } else {
-            resolve(res.Items);
+            resolve(res);
           }
         });
       });
@@ -278,6 +295,50 @@ export default class {
   }
 
   /**
+   * Reads from the database by secondary index with pagination capabilities
+   * @memberof dynamodb
+   * @param {Object} obj The object to search by secondary index on
+   *   @property {string} hash/index - Example { authId: '1234'}
+   * @param {Object} options Miscellaneous options like version, limit or lastKey (for pagination)
+   * @returns {Object} promise
+   */
+  readPaginate(obj, options = {}) {
+    return new Promise((resolve, reject) => {
+      let opts = {};
+      opts.version = options.version || false;
+      opts.limit = options.limit || false;
+      opts.lastKey = options.lastKey || false;
+      helpers.checkCreateTable(this, opts.version).then(() => {
+        const version = (opts.version === false) ? this.defaultVersion : opts.version;
+        const table = this.schemas[version].tableName;
+        const key = Object.keys(obj)[0];
+        const params = {
+          TableName: table,
+          IndexName: key + '-index',
+          KeyConditionExpression: key + ' = :hk_val',
+          ExpressionAttributeValues: {
+            ':hk_val': obj[key]
+          }
+        };
+        this.ddb.query(params, (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            let response = _.cloneDeep(data);
+            let returnValue = [];
+            const sanitize = this.sanitize;
+            _.each(response.Items, function(row) {
+              returnValue.push(sanitize(row));
+            });
+            response.Items = returnValue;
+            resolve(response);
+          }
+        });
+      }).catch(reject);
+    });
+  }
+
+  /**
    * Reads from the database by secondary index
    * @memberof dynamodb
    * @param {Object} obj The object to search by secondary index on
@@ -299,14 +360,13 @@ export default class {
           }
         };
         this.ddb.query(params, (err, data) => {
-          let returnValue = null;
           if (err) {
             reject(err);
           } else {
-            const cachedThis = this;
-            returnValue = [];
+            let returnValue = [];
+            const sanitize = this.sanitize;
             _.each(data.Items, function(row) {
-              returnValue.push(cachedThis.sanitize(row));
+              returnValue.push(sanitize(row));
             });
             resolve(returnValue);
           }

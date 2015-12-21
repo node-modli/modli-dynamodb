@@ -22,7 +22,7 @@ const functions = [
   'contains'
 ];
 
-helpers.checkCreateTable = (modelObj, paramVersion = false) => {
+helpers.checkCreateTable = (modelObj, paramVersion) => {
   return new Promise((resolve, reject) => {
     const version = (paramVersion === false) ? modelObj.defaultVersion : paramVersion;
 
