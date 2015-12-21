@@ -1,5 +1,6 @@
 /* eslint no-unused-expressions: 0 */
 /* global expect, request, describe, it, before, after */
+const _ = require('lodash');
 import '../setup';
 import DynamoAdapter from '../../src/index.js';
 import { dbData } from './test-data';
@@ -139,8 +140,17 @@ describe('dynamo numeric tests', () => {
     });
   });
   describe('create', () => {
-    it('Creates first entry', (done) => {
-      numeric.create(dbData.numericAccount.Item, '1').then((data) => {
+    it('Creates an entry without specifying version', (done) => {
+      numeric.create(dbData.numericAccount.Item).then((data) => {
+        expect(data).to.be.an.object;
+        done();
+      });
+    });
+    it('Creates an entry with specified version', (done) => {
+      const newItem = _.cloneDeep(dbData.numericAccount.Item);
+      newItem.id = 2;
+      newItem.login = 'benjamin';
+      numeric.create(newItem, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
@@ -267,8 +277,8 @@ describe('dynamo numeric tests', () => {
   describe('readPaginate', () => {
     let lastKey;
     before((done) => {
-      numeric.scan(undefined, {limit: 1}).then((data) => {
-        lastKey = JSON.stringify(data.LastEvaluatedKey);
+      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {limit: 1}).then((data) => {
+        lastKey = data.LastEvaluatedKey;
         done();
       });
     });
@@ -279,13 +289,19 @@ describe('dynamo numeric tests', () => {
       });
     });
     it('reads by numeric secondary with limit and lastKey', (done) => {
-      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {limit: 1, lastKey}).then((data) => {
+      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {limit: 1, lastKey: JSON.stringify(lastKey)}).then((data) => {
         expect(data.Items.length).to.be.above(0);
         done();
       });
     });
     it('reads an invalid hash', (done) => {
       numeric.readPaginate({junk: 'trash'}).then(done).catch((err) => {
+        expect(err).to.be.an.instanceof(Error);
+        done();
+      });
+    });
+    it('fails read by numeric secondary with limit and lastKey', (done) => {
+      numeric.readPaginate({'age': dbData.numericAccount.Item.age}, {limit: 1, lastKey}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
         done();
       });
@@ -330,7 +346,7 @@ describe('standard model', () => {
     let lastKey;
     before((done) => {
       standard.scan(undefined, {limit: 1}).then((data) => {
-        lastKey = JSON.stringify(data.LastEvaluatedKey);
+        lastKey = data.LastEvaluatedKey;
         done();
       });
     });
@@ -347,7 +363,7 @@ describe('standard model', () => {
       });
     });
     it('performs a generic scan with limit and lastKey', (done) => {
-      standard.scan(undefined, {limit: 1, lastKey}).then((data) => {
+      standard.scan(undefined, {limit: 1, lastKey: JSON.stringify(lastKey)}).then((data) => {
         expect(data.Items.length).to.be.above(0);
         done();
       });
@@ -389,7 +405,7 @@ describe('standard model', () => {
       });
     });
     it('fails a generic scan with limit and lastKey', (done) => {
-      standard.scan(undefined, {limit: 1, lastKey: JSON.parse(lastKey)}).then(done).catch((err) => {
+      standard.scan(undefined, {limit: 1, lastKey}).then(done).catch((err) => {
         expect(err).to.be.an.instanceof(Error);
         done();
       });
