@@ -210,17 +210,17 @@ export default class {
     return new Promise((resolve, reject) => {
       let opts = {};
       opts.version = options.version || false;
-      opts.limit = options.limit || false;
+      opts.limit = options.limit || 1000;
       opts.lastKey = options.lastKey || false;
       helpers.checkCreateTable(this, opts.version).then(() => {
         const version = (opts.version === false) ? this.defaultVersion : opts.version;
         const table = this.schemas[version].tableName;
-        let scanObject = {'TableName': table};
+        let scanObject = {
+          'TableName': table,
+          'Limit': opts.limit
+        };
         if (filterObject) {
           scanObject = this.createFilter(table, filterObject);
-        }
-        if (opts.limit) {
-          scanObject.Limit = opts.limit;
         }
         if (opts.lastKey) {
           try {
@@ -306,7 +306,7 @@ export default class {
     return new Promise((resolve, reject) => {
       let opts = {};
       opts.version = options.version || false;
-      opts.limit = options.limit || false;
+      opts.limit = options.limit || 1000;
       opts.lastKey = options.lastKey || false;
       helpers.checkCreateTable(this, opts.version).then(() => {
         const version = (opts.version === false) ? this.defaultVersion : opts.version;
@@ -318,11 +318,9 @@ export default class {
           KeyConditionExpression: key + ' = :hk_val',
           ExpressionAttributeValues: {
             ':hk_val': obj[key]
-          }
+          },
+          Limit: opts.limit
         };
-        if (opts.limit) {
-          params.Limit = opts.limit;
-        }
         if (opts.lastKey) {
           try {
             params.ExclusiveStartKey = JSON.parse(opts.lastKey);
