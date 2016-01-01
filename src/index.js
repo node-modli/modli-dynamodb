@@ -232,7 +232,7 @@ export default class {
           if (err) {
             reject(err);
           } else {
-            resolve(res);
+            resolve(res.Items);
           }
         });
       });
@@ -337,8 +337,7 @@ export default class {
             _.each(response.Items, function(row) {
               returnValue.push(sanitize(row));
             });
-            response.Items = returnValue;
-            resolve(response);
+            resolve(returnValue);
           }
         });
       }).catch(reject);
