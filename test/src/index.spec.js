@@ -508,12 +508,14 @@ describe('standard model', () => {
   describe('autocreate coverage', () => {
     before((done) => {
       // Make sure table exists
-      helpers.checkCreateTable(numeric, false);
-      // Make sure table exists before trying to delete it, and then auto creating it again
-      helpers.checkCreateTable(standard, false).then(() => {
-        standard.deleteTable({TableName: dbData.testModel.tableName}).then(() => {
-          helpers.checkCreateTable(standard, false);
-          done();
+      helpers.checkCreateTable(numeric, false).then(() => {
+        // Make sure table exists before trying to delete it, and then auto creating it again
+        helpers.checkCreateTable(standard, false).then(() => {
+          standard.deleteTable({TableName: dbData.testModel.tableName}).then(() => {
+            helpers.checkCreateTable(standard, false).then(() => {
+              done();
+            });
+          });
         });
       });
     });
