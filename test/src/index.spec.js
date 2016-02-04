@@ -3,6 +3,7 @@
 const _ = require('lodash');
 import '../setup';
 import DynamoAdapter from '../../src/index.js';
+import { helpers } from '../../src/helpers.js';
 import { dbData } from './test-data';
 import { model, adapter, use } from 'modli';
 let dynamoConfig = {
@@ -505,6 +506,17 @@ describe('standard model', () => {
   });
 
   describe('autocreate coverage', () => {
+    before((done) => {
+      // Make sure table exists
+      helpers.checkCreateTable(numeric, false);
+      // Make sure table exists before trying to delete it, and then auto creating it again
+      helpers.checkCreateTable(standard, false).then(() => {
+        standard.deleteTable({TableName: dbData.testModel.tableName}).then(() => {
+          helpers.checkCreateTable(standard, false);
+          done();
+        });
+      });
+    });
     it('Fails to create on non-existent table', (done) => {
       numeric.deleteTable({TableName: dbData.testNumericModel.tableName}).then(() => {
         numeric.create(dbData.numericAccount.Item, '1').then((data) => {
@@ -515,15 +527,8 @@ describe('standard model', () => {
       });
     });
 
-    it('Successfully creates first account on tables from post', (done) => {
+    it('Successfully creates account on autocreated table', (done) => {
       standard.create(dbData.testAccount1.Item, '1').then((data) => {
-        expect(data).to.be.an.object;
-        done();
-      });
-    });
-
-    it('Successfully creates second account on autocreated table', (done) => {
-      standard.create(dbData.testAccount2.Item, '1').then((data) => {
         expect(data).to.be.an.object;
         done();
       });
