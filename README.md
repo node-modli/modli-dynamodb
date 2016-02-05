@@ -33,7 +33,7 @@ let dynamoConfig = {
 };
 ```
 
-Add an instance of the model where the `autoCreate` flag is used to determine if calls to non-existant tables should automatically create the table from the model.
+Add an instance of the model where the `autoCreate` flag is used to determine if `helpers.checkCreateTable()` should automatically create the table from the model.
 
 Use `indexes` to define a hash key, range key or global secondary indexes as desired.
 
