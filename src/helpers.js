@@ -22,7 +22,7 @@ const functions = [
   'contains'
 ];
 
-helpers.checkCreateTable = (modelObj, paramVersion = false) => {
+helpers.checkCreateTable = (modelObj, paramVersion) => {
   return new Promise((resolve, reject) => {
     const version = (paramVersion === false) ? modelObj.defaultVersion : paramVersion;
 
@@ -33,7 +33,7 @@ helpers.checkCreateTable = (modelObj, paramVersion = false) => {
 
     // Get current list of tables to determine if table exists
     modelObj.ddb.listTables({}, (err, foundTables) => {
-      if (_.contains(foundTables.TableNames, modelObj.schemas[version].tableName)) {
+      if (foundTables && _.contains(foundTables.TableNames, modelObj.schemas[version].tableName)) {
         resolve();
       } else {
         modelObj.createTableFromModel(paramVersion).then(resolve).catch(reject);

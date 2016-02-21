@@ -1,6 +1,6 @@
 {
   "name": "modli-dynamodb",
-  "version": "1.0.7",
+  "version": "3.0.1",
   "description": "Modli adapter for AWS DynamoDB",
   "main": "build/index.js",
   "repository": {
@@ -17,14 +17,17 @@
     "aws"
   ],
   "author": "TechnologyAdvice <devteam@technologyadvice.com>",
+  "files": [
+    "build"
+  ],
   "scripts": {
-    "all": "make",
-    "start": "make start",
-    "clean": "make clean",
-    "build": "make build",
-    "test": "make test",
-    "test-cover": "make test-cover",
-    "lint": "make lint"
+    "clean": "rm -rf node_modules build coverage",
+    "build": "babel ./src --out-dir ./build",
+    "lint": "eslint ./src ./test --fix",
+    "mocha": "mocha --compilers js:babel/register ./test/src --recursive",
+    "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src",
+    "test": "npm run lint && npm run cover",
+    "prepublish": "lab test && lab build"
   },
   "license": "MIT",
   "devDependencies": {
@@ -34,23 +37,22 @@
     "babel-istanbul": "^0.3.17",
     "body-parser": "^1.13.3",
     "chai": "^3.0.0",
-    "eslint": "^1.2.1",
+    "eslint": "^1.4.0",
     "express": "^4.13.3",
     "istanbul-harmony": "^0.3.16",
     "mocha": "^2.2.5",
-    "modli": "^1.3.0",
+    "modli": "^1.4.1",
     "pre-commit": "^1.1.1",
     "should": "^7.0.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.1.46",
+    "aws-sdk": "^2.2.10",
     "bluebird": "^2.9.34",
     "dynamodb": "^0.3.6",
     "dynamodb-doc": "^1.0.0",
     "lodash": "^3.10.1"
   },
   "pre-commit": [
-    "lint",
-    "test"
+    "lint"
   ]
 }

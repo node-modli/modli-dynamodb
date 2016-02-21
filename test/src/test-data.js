@@ -135,6 +135,7 @@ dbData.testIncludeModel = {
   autoCreate: false,
   indexes: [
     { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'range', value: 'createdAt', type: 'S'},
     { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age']}
   ],
   tableName: 'userincludes',
