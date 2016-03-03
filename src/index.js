@@ -451,16 +451,16 @@ export default class {
   update(hashObject, updatedValuesArray, paramVersion = false) {
     const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
 
-    const keys = Object.keys(hashObject);
-    // Allows for HASH and possible RANGE key
-    keys.forEach((key) => {
-      if (updatedValuesArray[key]) {
-        delete updatedValuesArray[key];
-      }
-    });
-
     return this.validate(updatedValuesArray, version)
       .then(data => {
+        const keys = Object.keys(hashObject);
+        // Allows for HASH and possible RANGE key
+        keys.forEach((key) => {
+          if (data[key]) {
+            delete data[key];
+          }
+        });
+        
         const table = this.schemas[version].tableName;
 
         let params = {
