@@ -165,7 +165,7 @@ describe('dynamo numeric tests', () => {
       dbData.numericAccount.Item.failValidate = true;
       numeric.create(dbData.numericAccount.Item).then(done).catch((err) => {
         delete dbData.numericAccount.Item.failValidate;
-        expect(err).to.be.an.instanceof(Error);
+        expect(err.error).to.be.true;
         done();
       });
     });

@@ -96,13 +96,14 @@ export default class {
   create(body, paramVersion = false) {
     const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
     return this.validate(body, version)
-        .then(data => {
-          this.ddb.putItemAsync({
+      .then(data => {
+        return this.ddb.putItemAsync({
             TableName: this.schemas[version].tableName,
             ReturnValues: 'NONE',
             Item: data
-          });
-        });
+          })
+          .then(() => data);
+      });
   }
 
   /**
@@ -450,16 +451,16 @@ export default class {
   update(hashObject, updatedValuesArray, paramVersion = false) {
     const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
 
-    return this.validate(updatedValuesArray, version)
-      .then(data => {
-        const keys = Object.keys(hashObject);
-        // Allows for HASH and possible RANGE key
-        keys.forEach((key) => {
-          if (data[key]) {
-            delete data[key];
-          }
-        });
+    const keys = Object.keys(hashObject);
+    // Allows for HASH and possible RANGE key
+    keys.forEach((key) => {
+      if (updatedValuesArray[key]) {
+        delete updatedValuesArray[key];
+      }
+    });
 
+    return this.validate(updatedValuesArray, Object.keys(this.schemas)[0])
+      .then(data => {
         const table = this.schemas[version].tableName;
 
         let params = {
@@ -482,20 +483,12 @@ export default class {
         Object.keys(data).forEach((valueKey) => {
           i++;
           params.ExpressionAttributeNames['#param' + i] = valueKey;
-          params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
+          params.ExpressionAttributeValues[':val' + i] = data[valueKey];
           if (i > 1) {
             params.UpdateExpression += ', #param' + i + ' = :val' + i;
           }
         });
-        return new Promise((resolve, reject) => {
-          this.ddb.updateItem(params, function (err) {
-            if (err) {
-              reject(new Error(err));
-            } else {
-              resolve(data.Attributes);
-            }
-          });
-        });
+        return this.ddb.updateItemAsync(params).then(results => results.Attributes)
       });
   }
 
