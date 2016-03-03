@@ -98,10 +98,10 @@ export default class {
     return this.validate(body, version)
       .then(data => {
         return this.ddb.putItemAsync({
-            TableName: this.schemas[version].tableName,
-            ReturnValues: 'NONE',
-            Item: data
-          })
+          TableName: this.schemas[version].tableName,
+          ReturnValues: 'NONE',
+          Item: data
+        })
           .then(() => data);
       });
   }
@@ -488,7 +488,7 @@ export default class {
             params.UpdateExpression += ', #param' + i + ' = :val' + i;
           }
         });
-        return this.ddb.updateItemAsync(params).then(results => results.Attributes)
+        return this.ddb.updateItemAsync(params).then(results => results.Attributes);
       });
   }
 
