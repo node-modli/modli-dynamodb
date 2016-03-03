@@ -459,7 +459,7 @@ export default class {
       }
     });
 
-    return this.validate(updatedValuesArray, Object.keys(this.schemas)[0])
+    return this.validate(updatedValuesArray, version)
       .then(data => {
         const table = this.schemas[version].tableName;
 
