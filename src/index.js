@@ -460,7 +460,7 @@ export default class {
             delete data[key];
           }
         });
-        
+
         const table = this.schemas[version].tableName;
 
         let params = {

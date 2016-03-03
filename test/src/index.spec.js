@@ -40,7 +40,7 @@ const validate = (body) => {
         reject({error: true});
       }
     }
-    // Mock passing validation, return null
+    // Mock passing validation, return body
     resolve(body);
   });
 };
@@ -93,7 +93,7 @@ describe('Verifies integration with modli', () => {
   let newModel;
   it('Adds a model to modli object', (done) => {
     model.add({
-      tableName: 'user',
+      tableName: 'user_roles',
       name: 'roles',
       version: 1,
       schema: dbData.userSchema
@@ -165,7 +165,7 @@ describe('dynamo numeric tests', () => {
       dbData.numericAccount.Item.failValidate = true;
       numeric.create(dbData.numericAccount.Item).then(done).catch((err) => {
         delete dbData.numericAccount.Item.failValidate;
-        expect(err.error).to.be.true;
+        expect(err).to.deep.equal({ error: true });
         done();
       });
     });
