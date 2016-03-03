@@ -24,8 +24,8 @@
     "clean": "rm -rf node_modules build coverage",
     "build": "babel ./src --out-dir ./build",
     "lint": "eslint ./src ./test --fix",
-    "mocha": "mocha --compilers js:babel/register ./test/src --recursive",
-    "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src",
+    "mocha": "mocha --compilers js:babel/register ./test/src --recursive --timeout 5000",
+    "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src --timeout 5000",
     "test": "npm run lint && npm run cover",
     "prepublish": "lab test && lab build"
   },
@@ -33,7 +33,7 @@
   "devDependencies": {
     "assert": "^1.3.0",
     "babel": "^5.6.14",
-    "babel-eslint": "^4.0.5",
+    "babel-eslint": "~4.1.7",
     "babel-istanbul": "^0.3.17",
     "body-parser": "^1.13.3",
     "chai": "^3.0.0",
@@ -41,7 +41,7 @@
     "express": "^4.13.3",
     "istanbul-harmony": "^0.3.16",
     "mocha": "^2.2.5",
-    "modli": "^1.4.1",
+    "modli": "^2.0.1",
     "pre-commit": "^1.1.1",
     "should": "^7.0.2"
   },

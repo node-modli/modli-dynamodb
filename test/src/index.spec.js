@@ -29,18 +29,20 @@ projectionAdapter.setSchema(dbData.testProjectionModel, '1');
 includeAdapter.setSchema(dbData.testIncludeModel, '1');
 
 const validate = (body) => {
-  // Test validation failure by passing `failValidate: true`
-  if (body.Item) {
-    if (body.Item.failValidate) {
-      return { error: true };
+  return new Promise((resolve, reject) => {
+    // Test validation failure by passing `failValidate: true`
+    if (body.Item) {
+      if (body.Item.failValidate) {
+        reject({ error: true });
+      }
+    } else {
+      if (body.failValidate) {
+        reject({error: true});
+      }
     }
-  } else {
-    if (body.failValidate) {
-      return {error: true};
-    }
-  }
-  // Mock passing validation, return null
-  return null;
+    // Mock passing validation, return null
+    resolve(body);
+  });
 };
 // Mock sanitize method, this is automatically done by the model
 const sanitize = (body) => {
@@ -91,6 +93,7 @@ describe('Verifies integration with modli', () => {
   let newModel;
   it('Adds a model to modli object', (done) => {
     model.add({
+      tableName: 'user',
       name: 'roles',
       version: 1,
       schema: dbData.userSchema
@@ -455,7 +458,7 @@ describe('standard model', () => {
     });
     it('fails to update with invalid data', (done) => {
       standard.update({id: dbData.testAccount1.Item.id}, {email: 'test@test.com', failValidate: true}).then(done).catch((err) => {
-        expect(err).to.be.an.instanceof(Error);
+        expect(err).to.deep.equal({ error: true });
         done();
       });
     });

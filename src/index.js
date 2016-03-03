@@ -14,6 +14,7 @@ export default class {
     this.schemas = {};
     const dynDb = new AWS.DynamoDB(config);
     this.ddb = new DOC.DynamoDB(dynDb);
+    Promise.promisifyAll(this.ddb);
   }
 
   /**
@@ -93,26 +94,15 @@ export default class {
    * @returns {Object} promise
    */
   create(body, paramVersion = false) {
-    return new Promise((resolve, reject) => {
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const validationErrors = this.validate(body, version);
-      if (validationErrors) {
-        throw new Error('Modli Errors: ' + validationErrors);
-      } else {
-        const createParams = {
-          TableName: this.schemas[version].tableName,
-          ReturnValues: 'NONE',
-          Item: body
-        };
-        this.ddb.putItem(createParams, function (err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(body);
-          }
+    const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+    return this.validate(body, version)
+        .then(data => {
+          this.ddb.putItemAsync({
+            TableName: this.schemas[version].tableName,
+            ReturnValues: 'NONE',
+            Item: data
+          });
         });
-      }
-    });
   }
 
   /**
@@ -458,20 +448,18 @@ export default class {
    * @returns {Object} promise
    */
   update(hashObject, updatedValuesArray, paramVersion = false) {
-    // TODO : Implement validation
-    return new Promise((resolve, reject) => {
-      const keys = Object.keys(hashObject);
-      // Allows for HASH and possible RANGE key
-      keys.forEach((key) => {
-        if (updatedValuesArray[key]) {
-          delete updatedValuesArray[key];
-        }
-      });
-      const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
-      const validationErrors = this.validate(updatedValuesArray, Object.keys(this.schemas)[0]);
-      if (validationErrors) {
-        reject(new Error(validationErrors));
-      } else {
+    const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
+
+    return this.validate(updatedValuesArray, version)
+      .then(data => {
+        const keys = Object.keys(hashObject);
+        // Allows for HASH and possible RANGE key
+        keys.forEach((key) => {
+          if (data[key]) {
+            delete data[key];
+          }
+        });
+
         const table = this.schemas[version].tableName;
 
         let params = {
@@ -491,7 +479,7 @@ export default class {
         });
 
         let i = 0;
-        Object.keys(updatedValuesArray).forEach((valueKey) => {
+        Object.keys(data).forEach((valueKey) => {
           i++;
           params.ExpressionAttributeNames['#param' + i] = valueKey;
           params.ExpressionAttributeValues[':val' + i] = updatedValuesArray[valueKey];
@@ -499,15 +487,16 @@ export default class {
             params.UpdateExpression += ', #param' + i + ' = :val' + i;
           }
         });
-        this.ddb.updateItem(params, function (err, data) {
-          if (err) {
-            reject(new Error(err));
-          } else {
-            resolve(data.Attributes);
-          }
+        return new Promise((resolve, reject) => {
+          this.ddb.updateItem(params, function (err) {
+            if (err) {
+              reject(new Error(err));
+            } else {
+              resolve(data.Attributes);
+            }
+          });
         });
-      }
-    });
+      });
   }
 
   /**

@@ -1,5 +1,3 @@
-import { Joi } from 'modli';
-
 export const dbData = {};
 
 // Mockup to represent numeric keys and multiple gsi
@@ -93,10 +91,10 @@ dbData.testModel = {
 };
 
 dbData.userSchema = {
-  id: Joi.string(),
-  password: Joi.string(),
-  firstName: Joi.string(),
-  lastName: Joi.string()
+  id: { type: 'string' },
+  password: { type: 'string' },
+  firstName: { type: 'string' },
+  lastName: { type: 'string' }
 };
 
 dbData.testNumericModel = {
