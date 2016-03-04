@@ -21,7 +21,7 @@ npm install modli-dynamodb --save
 
 Configure your adapter and model
 ```javascript
-import { model, adapter, Joi, use } from 'modli';
+import { model, adapter, use } from 'modli';
 import dynamodb from 'modli-dynamodb';
 
 // Set your configuration
@@ -52,9 +52,9 @@ model.add({
     { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age']}
   ],
   schema: {
-    id: Joi.string(),
-    name: Joi.string(),
-    age: Joi.number()
+    id: { type: 'string' },
+    name: { type: 'string' },
+    age: { type: 'number' }
   }
 });
 ```
