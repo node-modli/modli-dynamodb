@@ -439,6 +439,17 @@ export default class {
     });
   }
 
+  /**
+   * Updates a partial entry in the database
+   * @memberof dynamodb
+   * @param {Object} hashObject The object to search for to update
+   *   @property {string} hash/index - Example { authId: '1234'}
+   * @param {Object} updatedValuesArray An array of values to update on the found row
+   * @returns {Object} promise
+   */
+  patch(hashObject, updatedValuesArray, paramVersion = false) {
+    return this.update(hashObject, updatedValuesArray, paramVersion, true);
+  }
 
   /**
    * Updates an entry in the database
@@ -448,10 +459,10 @@ export default class {
    * @param {Object} updatedValuesArray An array of values to update on the found row
    * @returns {Object} promise
    */
-  update(hashObject, updatedValuesArray, paramVersion = false) {
+  update(hashObject, updatedValuesArray, paramVersion = false, partial = false) {
     const version = (paramVersion === false) ? this.defaultVersion : paramVersion;
 
-    return this.validate(updatedValuesArray, version)
+    return this.validate(updatedValuesArray, version, partial)
       .then(data => {
         const keys = Object.keys(hashObject);
         // Allows for HASH and possible RANGE key
