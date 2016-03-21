@@ -233,7 +233,17 @@ testDynamo.getItemsInArray('HASHNAME', [1,2,3,4])
 Updates a row in the table by HASH / Value pair and JSON Object specifying new values
 
 ```javascript
-testDynamo.update({HASH: 'SomeValue'}, {Name: 'New Name'})
+testDynamo.update({HASH: 'SomeValue'}, { /* update object */ })
+  .then(/*...*/)
+  .catch(/*...*/);
+```
+
+### `patch`
+
+Partial updates a row in the table by HASH / Value pair and JSON Object specifying new values
+
+```javascript
+testDynamo.patch({HASH: 'SomeValue'}, { /* partial update object */ })
   .then(/*...*/)
   .catch(/*...*/);
 ```
