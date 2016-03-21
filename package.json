@@ -1,6 +1,6 @@
 {
   "name": "modli-dynamodb",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Modli adapter for AWS DynamoDB",
   "main": "build/index.js",
   "repository": {
