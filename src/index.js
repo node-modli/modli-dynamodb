@@ -12,6 +12,7 @@ let DOC = require('dynamodb-doc');
 export default class {
   constructor(config) {
     this.schemas = {};
+    AWS.config.update(config);
     const dynDb = new AWS.DynamoDB(config);
     this.ddb = new DOC.DynamoDB(dynDb);
     Promise.promisifyAll(this.ddb);

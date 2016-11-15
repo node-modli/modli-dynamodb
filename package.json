@@ -46,7 +46,7 @@
     "should": "^7.0.2"
   },
   "dependencies": {
-    "aws-sdk": "^2.2.10",
+    "aws-sdk": "^2.7.1",
     "bluebird": "^2.9.34",
     "dynamodb": "^0.3.6",
     "dynamodb-doc": "^1.0.0",
