@@ -1,7 +1,5 @@
 dockerfiles
 test
 src
-.codeclimate.yml
 .gitignore
 .jshintrc
-wercker.yml
