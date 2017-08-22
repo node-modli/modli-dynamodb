@@ -1,0 +1,21 @@
+sudo: required
+
+services:
+  - docker
+
+language: node_js
+node_js:
+  - "6"
+
+before_install:
+  - npm i -g binci
+
+install:
+  - binci install
+
+script:
+  - binci lint cover
+
+after_success:
+  - sudo chmod -R 777 .yarn-cache/ && sudo chmod -R 777 node_modules/ && sudo chmod -R 777 ~/.npm
+  - export DEPLOY_SHA=$TRAVIS_COMMIT
