@@ -15,7 +15,7 @@ npm install modli-dynamodb --save
 
 ## Working Locally
 
-**IMPORTANT:** For testing (with linked services) to run correctly you must have [docker](http://www.docker.com) and DevLab `npm install devlab -g` installed.
+**IMPORTANT:** For testing (with linked services) to run correctly you must have [docker](http://www.docker.com) and Binci `npm install binci -g` installed.
 
 ## Usage
 
@@ -268,10 +268,10 @@ testDynamo.extend('methodName', () => {
 })
 ```
 
-## DevLab and Scripts
+## Binci and Scripts
 
-The system utilizes DevLab for running tasks in containers. The below tasks will
-be executed in containers via `lab {task-name}`:
+The system utilizes Binci for running tasks in containers. The below tasks will
+be executed in containers via `binci {task-name}`:
 
 * `clean` will remove the `/node_modules`, `/build` and `/coverage` directories
 * `install` will install dependencies
@@ -283,7 +283,7 @@ be executed in containers via `lab {task-name}`:
 
 ## Testing
 
-Running `lab mocha` will run the tests.
+Running `binci mocha` will run the tests.
 
 ## License
 

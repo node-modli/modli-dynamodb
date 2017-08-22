@@ -1,7 +1,7 @@
 from: technologyadvice/node-build:4
 services:
-  - modli/dynamodb:
-      name: dynamo
+  - dynamo:
+      from: modli/dynamodb
       persist: false
 before-task: |
   export MODLI_DYNAMODB_HOST=http://$DYNAMO_PORT_8000_TCP_ADDR:8000
