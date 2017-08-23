@@ -17,5 +17,5 @@ script:
   - binci lint cover
 
 after_success:
-  - sudo chmod -R 777 node_modules/ && sudo chmod -R 777 ~/.npm
+  - sudo chmod -R 777 .yarn-cache/ && sudo chmod -R 777 node_modules/ && sudo chmod -R 777 ~/.npm
   - export DEPLOY_SHA=$TRAVIS_COMMIT

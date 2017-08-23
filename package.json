@@ -26,8 +26,8 @@
     "lint": "eslint ./src ./test --fix",
     "mocha": "mocha --compilers js:babel/register ./test/src --recursive",
     "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src",
-    "test": "npm run lint && npm run cover",
-    "prepublish": "binci test && binci build"
+    "test": "yarn run lint && yarn run cover",
+    "prepublish": "yarn run test && yarn run build"
   },
   "license": "MIT",
   "devDependencies": {
