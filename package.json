@@ -27,7 +27,7 @@
     "mocha": "mocha --compilers js:babel/register ./test/src --recursive",
     "cover": "istanbul cover ./node_modules/.bin/_mocha -- --compilers js:babel/register ./test/src",
     "test": "yarn run lint && yarn run cover",
-    "prepublish": "yarn run test && yarn run build"
+    "prepublish": "binci test build"
   },
   "license": "MIT",
   "devDependencies": {
