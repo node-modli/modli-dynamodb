@@ -3,7 +3,7 @@ services:
   - dynamo:
       from: modli/dynamodb
       persist: false
-before-task: |
+before: |
   export MODLI_DYNAMODB_HOST=http://$DYNAMO_PORT_8000_TCP_ADDR:8000
 tasks:
   env: env
