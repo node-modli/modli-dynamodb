@@ -19,6 +19,7 @@ const failAdapter = new DynamoAdapter(dynamoConfig);
 const nogsiAdapter = new DynamoAdapter(dynamoConfig);
 const projectionAdapter = new DynamoAdapter(dynamoConfig);
 const includeAdapter = new DynamoAdapter(dynamoConfig);
+const compositeAdapter = new DynamoAdapter(dynamoConfig);
 
 // Set the schemas
 numeric.setSchema(dbData.testNumericModel, '1');
@@ -27,6 +28,7 @@ failAdapter.setSchema(dbData.badModel, '1');
 nogsiAdapter.setSchema(dbData.nogsiModel, '1');
 projectionAdapter.setSchema(dbData.testProjectionModel, '1');
 includeAdapter.setSchema(dbData.testIncludeModel, '1');
+compositeAdapter.setSchema(dbData.testCompositeModel, '1');
 
 const validate = (body) => {
   return new Promise((resolve, reject) => {
@@ -58,6 +60,19 @@ failAdapter.sanitize = sanitize;
 nogsiAdapter.sanitize = sanitize;
 projectionAdapter.sanitize = sanitize;
 includeAdapter.sanitize = sanitize;
+compositeAdapter.sanitize = sanitize;
+
+describe('Composite Keys', () => {
+  after(() => compositeAdapter.deleteTable({TableName: dbData.testCompositeModel.tableName}));
+  it('creates a table with a composite key global secondary index', () => {
+    return compositeAdapter.createTableFromModel().then((data) => {
+      data.TableDescription.CreationDateTime = '';
+      data.TableDescription.ProvisionedThroughput.LastDecreaseDateTime = '';
+      data.TableDescription.ProvisionedThroughput.LastIncreaseDateTime = '';
+      expect(data).to.deep.equal(dbData.testCompositeModelResult);
+    });
+  });
+});
 
 describe('Non standard projection types', () => {
   it('Creates the KEYS_ONLY only table', (done) => {
