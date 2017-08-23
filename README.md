@@ -59,6 +59,26 @@ model.add({
 });
 ```
 
+Or you can add a _composite key_ global secondary index like so:
+
+```javascript
+model.add({
+  name: 'logs',
+  version: 1,
+  autoCreate: true,
+  indexes: [
+    { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'range', value: 'createdAt', type: 'S'},
+    { keytype: 'secondary', values: [{keytype: 'hash', value: 'login', type: 'S'}, {keytype: 'range', value: 'createdAt', type: 'S'}]}
+  ],
+  schema: {
+    id: { type: 'number' },
+    login: { type: 'string' },
+    createdAt: { type: 'string' }
+  }
+});
+```
+
 Add the adapter with the previously defined config object structure:
 
 ```javascript
