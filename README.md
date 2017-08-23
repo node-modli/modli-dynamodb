@@ -48,8 +48,8 @@ model.add({
   version: 1,
   autoCreate: true,
   indexes: [
-    { keytype: 'hash', value: 'id', type: 'N'},
-    { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age']}
+    { keytype: 'hash', value: 'id', type: 'N' },
+    { keytype: 'secondary', value: 'login', type: 'S', projectionType: 'INCLUDE', nonKeyAttributes: ['age'] }
   ],
   schema: {
     id: { type: 'string' },
@@ -67,9 +67,12 @@ model.add({
   version: 1,
   autoCreate: true,
   indexes: [
-    { keytype: 'hash', value: 'id', type: 'N'},
-    { keytype: 'range', value: 'createdAt', type: 'S'},
-    { keytype: 'secondary', values: [{keytype: 'hash', value: 'login', type: 'S'}, {keytype: 'range', value: 'createdAt', type: 'S'}]}
+    { keytype: 'hash', value: 'id', type: 'N' },
+    { keytype: 'range', value: 'createdAt', type: 'S' },
+    { keytype: 'secondary', values: [
+      { keytype: 'hash', value: 'login', type: 'S' },
+      { keytype: 'range', value: 'createdAt', type: 'S' }
+      ] }
   ],
   schema: {
     id: { type: 'number' },

@@ -174,7 +174,10 @@ dbData.testCompositeModel = {
   indexes: [
     { keytype: 'hash', value: 'id', type: 'N'},
     { keytype: 'range', value: 'createdAt', type: 'S'},
-    { keytype: 'secondary', values: [{keytype: 'hash', value: 'login', type: 'S'}, {keytype: 'range', value: 'createdAt', type: 'S'}]}
+    { keytype: 'secondary', values: [
+      {keytype: 'hash', value: 'login', type: 'S'},
+      {keytype: 'range', value: 'createdAt', type: 'S'}
+    ]}
   ],
   tableName: 'usercomposites',
   schema: {

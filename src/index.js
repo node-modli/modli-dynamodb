@@ -57,7 +57,7 @@ export default class {
       delete params.projectionType;
     }
     // Check for composite key
-    if (params.values) {
+    if (params.values && Array.isArray(params.values)) {
       newIndex.IndexName = '';
       params.values.forEach(obj => {
         newIndex.IndexName += obj.value + '-';
@@ -154,7 +154,7 @@ export default class {
     newTable.Table.TableName = this.schemas[version].tableName;
     _.each(this.schemas[version].indexes, (row) => {
       // Check for composite key
-      if (row.values) {
+      if (row.values && Array.isArray(row.values)) {
         row.values.forEach(obj => {
           newTable.Table.AttributeDefinitions.push(this.generateDefinition(obj));
         });
