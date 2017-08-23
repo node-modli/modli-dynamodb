@@ -56,8 +56,18 @@ export default class {
       }
       delete params.projectionType;
     }
-    newIndex.IndexName = params.value + '-index';
-    newIndex.KeySchema.push(this.generateKey(params));
+    // Check for composite key
+    if (params.values && Array.isArray(params.values)) {
+      newIndex.IndexName = '';
+      params.values.forEach(obj => {
+        newIndex.IndexName += obj.value + '-';
+        newIndex.KeySchema.push(this.generateKey(obj));
+      });
+      newIndex.IndexName += 'index';
+    } else {
+      newIndex.IndexName = params.value + '-index';
+      newIndex.KeySchema.push(this.generateKey(params));
+    }
     return newIndex;
   }
 
@@ -143,7 +153,16 @@ export default class {
     let newTable = _.clone(tables.table, true);
     newTable.Table.TableName = this.schemas[version].tableName;
     _.each(this.schemas[version].indexes, (row) => {
-      newTable.Table.AttributeDefinitions.push(this.generateDefinition(row));
+      // Check for composite key
+      if (row.values && Array.isArray(row.values)) {
+        row.values.forEach(obj => {
+          newTable.Table.AttributeDefinitions.push(this.generateDefinition(obj));
+        });
+      } else {
+        newTable.Table.AttributeDefinitions.push(this.generateDefinition(row));
+      }
+      // Remove duplicates in AttributeDefinitions on AttributeName
+      newTable.Table.AttributeDefinitions = _.uniq(newTable.Table.AttributeDefinitions, 'AttributeName');
       if (row.keytype === 'hash' || row.keytype === 'range') {
         newTable.Table.KeySchema.push(this.generateKey(row));
       } else if (row.keytype === 'secondary') {

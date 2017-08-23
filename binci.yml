@@ -1,0 +1,16 @@
+from: technologyadvice/node-build:6
+services:
+  - dynamo:
+      from: modli/dynamodb
+      persist: false
+before: |
+  export MODLI_DYNAMODB_HOST=http://$DYNAMO_PORT_8000_TCP_ADDR:8000
+tasks:
+  env: env
+  clean: yarn run clean
+  install: yarn install
+  mocha: yarn run mocha
+  test: yarn run test
+  cover: yarn run cover
+  lint: yarn run lint
+  build: yarn run build

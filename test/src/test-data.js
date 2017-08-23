@@ -166,3 +166,89 @@ dbData.nogsiModel = {
     permissions: {}
   }
 };
+
+dbData.testCompositeModel = {
+  name: 'usercomposite',
+  version: 1,
+  autoCreate: false,
+  indexes: [
+    { keytype: 'hash', value: 'id', type: 'N'},
+    { keytype: 'range', value: 'createdAt', type: 'S'},
+    { keytype: 'secondary', values: [
+      {keytype: 'hash', value: 'login', type: 'S'},
+      {keytype: 'range', value: 'createdAt', type: 'S'}
+    ]}
+  ],
+  tableName: 'usercomposites',
+  schema: {
+    permissions: {}
+  }
+};
+
+dbData.testCompositeModelResult = {
+  'TableDescription': {
+    'CreationDateTime': '',
+    'AttributeDefinitions': [
+      {
+        'AttributeName': 'id',
+        'AttributeType': 'N'
+      },
+      {
+        'AttributeName': 'createdAt',
+        'AttributeType': 'S'
+      },
+      {
+        'AttributeName': 'login',
+        'AttributeType': 'S'
+      }
+    ],
+    'TableArn': 'arn:aws:dynamodb:ddblocal:000000000000:table/usercomposites',
+    'TableName': 'usercomposites',
+    'TableSizeBytes': 0,
+    'TableStatus': 'ACTIVE',
+    'ItemCount': 0,
+    'KeySchema': [
+      {
+        'AttributeName': 'id',
+        'KeyType': 'HASH'
+      },
+      {
+        'AttributeName': 'createdAt',
+        'KeyType': 'RANGE'
+      }
+    ],
+    'ProvisionedThroughput': {
+      'LastDecreaseDateTime': '',
+      'LastIncreaseDateTime': '',
+      'NumberOfDecreasesToday': 0,
+      'ReadCapacityUnits': 1,
+      'WriteCapacityUnits': 1
+    },
+    'GlobalSecondaryIndexes': [
+      {
+        'IndexArn': 'arn:aws:dynamodb:ddblocal:000000000000:table/usercomposites/index/login-createdAt-index',
+        'IndexName': 'login-createdAt-index',
+        'IndexSizeBytes': 0,
+        'IndexStatus': 'ACTIVE',
+        'ItemCount': 0,
+        'KeySchema': [
+          {
+            'AttributeName': 'login',
+            'KeyType': 'HASH'
+          },
+          {
+            'AttributeName': 'createdAt',
+            'KeyType': 'RANGE'
+          }
+        ],
+        'Projection': {
+          'ProjectionType': 'ALL'
+        },
+        'ProvisionedThroughput': {
+          'ReadCapacityUnits': 1,
+          'WriteCapacityUnits': 1
+        }
+      }
+    ]
+  }
+};
